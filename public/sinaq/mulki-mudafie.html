@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Mülki Müdafiə Sınaq</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one centred working column (max 760px); header strip, then one view at a time (start / test / result). */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#18212c; --muted:#5a6675; --line:#d7dde4; --soft:#e5e9ee;
+  --accent:#b8441a; --accent-ink:#ffffff; --accent-soft:#f7e3d9;
+  --ok:#17803d; --ok-bg:#e1f3e7; --ok-line:#7fc79a;
+  --bad:#c42f22; --bad-bg:#fbe4e1; --bad-line:#eba29a;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1319; --surface:#161e27; --ink:#e6ebf0; --muted:#95a2b1; --line:#2a3644; --soft:#1e2833;
+  --accent:#f0874f; --accent-ink:#1a0f08; --accent-soft:#3a2216;
+  --ok:#4fd286; --ok-bg:#13301f; --ok-line:#2e7a4c;
+  --bad:#ff7466; --bad-bg:#3b1714; --bad-line:#8a352d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#161e27; --ink:#e6ebf0; --muted:#95a2b1; --line:#2a3644; --soft:#1e2833;
+  --accent:#f0874f; --accent-ink:#1a0f08; --accent-soft:#3a2216;
+  --ok:#4fd286; --ok-bg:#13301f; --ok-line:#2e7a4c;
+  --bad:#ff7466; --bad-bg:#3b1714; --bad-line:#8a352d; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:760px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:20px 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:34px;height:34px;flex:none;border-radius:8px;background:var(--accent);display:grid;place-items:center}
+.mark svg{width:20px;height:20px}
+.brand h1{font-size:17px;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.brand .src{font-size:12.5px;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.stack{display:flex;flex-direction:column;gap:18px}
+.label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:var(--soft);border-radius:8px;padding:12px}
+.stat b{display:block;font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:22px}
+.row>div{min-width:0}
+.range{display:flex;align-items:center;gap:8px}
+.range input{width:76px;font:inherit;font-family:var(--mono);padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink)}
+.check{display:flex;align-items:center;gap:9px;font-size:14px}
+.check input{width:17px;height:17px;accent-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.note{font-size:13px;color:var(--muted)}
+.confirm{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:13.5px;background:var(--bad-bg);border:1px solid var(--bad-line);border-radius:8px;padding:10px 12px}
+/* test view */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.counter{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.tally{display:flex;gap:8px;font-family:var(--mono);font-size:13px}
+.pill{border-radius:999px;padding:3px 10px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+.bar{height:6px;background:var(--soft);border-radius:999px;overflow:hidden;margin-bottom:18px;display:flex}
+.bar i{display:block;height:100%}
+.qnum{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.qtext{font-size:18.5px;font-weight:600;line-height:1.45;margin:0 0 18px;text-wrap:pretty}
+.opts{display:flex;flex-direction:column;gap:9px;list-style:none;margin:0;padding:0}
+.opt{width:100%;text-align:left;display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:12px 14px;font-size:15.5px;line-height:1.45;transition:border-color .12s,background .12s}
+.opt:hover:not(:disabled){border-color:var(--muted);background:var(--soft)}
+.opt:disabled{cursor:default}
+.opt .key{flex:none;width:26px;height:26px;border-radius:6px;border:1.5px solid var(--line);display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted)}
+.opt .t{min-width:0;padding-top:1px}
+.opt.ok{border-color:var(--ok);background:var(--ok-bg);color:var(--ok);font-weight:600}
+.opt.ok .key{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.opt.bad{border-color:var(--bad);background:var(--bad-bg);color:var(--bad);font-weight:600}
+.opt.bad .key{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.opt.dim{opacity:.55}
+.verdict{margin-top:16px;font-weight:700;display:flex;align-items:center;gap:8px;min-height:24px}
+.verdict.ok{color:var(--ok)} .verdict.bad{color:var(--bad)}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--muted)}
+/* results */
+.score{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.score b{font-family:var(--mono);font-size:48px;line-height:1;font-variant-numeric:tabular-nums}
+.review{display:flex;flex-direction:column;gap:14px}
+.rv{border-top:1px solid var(--line);padding-top:14px}
+.rv .q{font-weight:600;margin:2px 0 8px}
+.rv .a{font-size:14.5px;padding:6px 10px;border-radius:7px;margin-top:5px}
+.rv .a.bad{background:var(--bad-bg);color:var(--bad)} .rv .a.ok{background:var(--ok-bg);color:var(--ok)}
+.msg{font-size:13.5px;border-radius:8px;padding:10px 12px;background:var(--soft)}
+.msg.err{background:var(--bad-bg);color:var(--bad)} .msg.good{background:var(--ok-bg);color:var(--ok)}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}.qtext{font-size:17px}.panel{padding:16px}.score b{font-size:40px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand">
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" style="stroke:var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.4 3.4 8.2 8 9 4.6-.8 8-4.6 8-9V6l-8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></div>
+    <div style="min-width:0"><h1>Mülki Müdafiə Sınaq</h1><div class="src" id="src">Aşurbəy · 200 sual</div></div>
+  </div>
+  <div class="actions">
+    <input type="file" id="file" accept="application/pdf,.pdf" hidden>
+    <button class="btn ghost" id="uploadBtn" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>PDF yüklə</button>
+  </div>
+</header>
+
+<main>
+<!-- START -->
+<section id="vStart" class="stack">
+  <div id="uploadMsg" class="msg" hidden></div>
+  <div class="panel stack">
+    <div>
+      <div class="label">Sənin nəticələrin</div>
+      <div class="stats">
+        <div class="stat"><b id="sSeen">0</b><span>görülmüş sual</span></div>
+        <div class="stat"><b id="sAcc">—</b><span>düzgün cavab faizi</span></div>
+        <div class="stat"><b id="sWrong">0</b><span>səhv bankında</span></div>
+        <div class="stat"><b id="sNew">200</b><span>heç görülməyən</span></div>
+      </div>
+    </div>
+    <div id="resumeBox" class="actions" hidden>
+      <button class="btn primary" id="resumeBtn" type="button">Yarımçıq sınağa davam et</button>
+      <span class="note" id="resumeNote"></span>
+    </div>
+  </div>
+
+  <div class="panel stack">
+    <div>
+      <div class="label">Sual sayı</div>
+      <div class="seg" id="segCount">
+        <button type="button" data-v="10" aria-pressed="false">10</button>
+        <button type="button" data-v="20" aria-pressed="false">20</button>
+        <button type="button" data-v="30" aria-pressed="true">30</button>
+        <button type="button" data-v="50" aria-pressed="false">50</button>
+        <button type="button" data-v="100" aria-pressed="false">100</button>
+        <button type="button" data-v="all" aria-pressed="false">Hamısı</button>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="label">Suallar aralığı</div>
+        <div class="range"><input id="from" type="number" min="1" value="1" aria-label="Başlanğıc sual"><span>—</span><input id="to" type="number" min="1" value="200" aria-label="Son sual"></div>
+      </div>
+      <div>
+        <div class="label">Qaydası</div>
+        <div class="seg" id="segOrder">
+          <button type="button" data-v="random" aria-pressed="true">Qarışıq</button>
+          <button type="button" data-v="seq" aria-pressed="false">Ardıcıl</button>
+        </div>
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" id="shuffleOpts" checked> Variantların yerini qarışdır</label>
+    <div class="actions">
+      <button class="btn primary" id="startBtn" type="button">Sınağa başla</button>
+      <button class="btn" id="wrongBtn" type="button">Səhvlərimi işlə</button>
+      <button class="btn" id="newBtn" type="button">Görmədiklərim</button>
+    </div>
+    <div class="note">Klaviatura: <span class="kbd">A</span>–<span class="kbd">E</span> və ya <span class="kbd">1</span>–<span class="kbd">5</span> variant seçir, <span class="kbd">Enter</span> növbəti suala keçir.</div>
+  </div>
+
+  <div class="actions">
+    <button class="btn ghost" id="resetBtn" type="button">Nəticələri sıfırla</button>
+    <div id="resetConfirm" class="confirm" hidden>
+      <span>Bütün nəticələr və səhv bankı silinsin?</span>
+      <button class="btn" id="resetYes" type="button">Bəli, sil</button>
+      <button class="btn ghost" id="resetNo" type="button">Ləğv et</button>
+    </div>
+  </div>
+</section>
+
+<!-- TEST -->
+<section id="vTest" hidden>
+  <div class="topbar">
+    <div class="counter" id="counter">1 / 30</div>
+    <div class="tally"><span class="pill ok" id="tOk">✓ 0</span><span class="pill bad" id="tBad">✗ 0</span></div>
+  </div>
+  <div class="bar" id="bar"></div>
+  <div class="panel">
+    <div class="qnum" id="qnum"></div>
+    <p class="qtext" id="qtext"></p>
+    <ol class="opts" id="opts"></ol>
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+  </div>
+  <div class="foot">
+    <button class="btn ghost" id="finishBtn" type="button">Sınağı bitir</button>
+    <button class="btn primary" id="nextBtn" type="button" disabled>Növbəti sual →</button>
+  </div>
+</section>
+
+<!-- RESULT -->
+<section id="vResult" class="stack" hidden>
+  <div class="panel stack">
+    <div class="label">Sınaq bitdi</div>
+    <div class="score"><b id="rPct">0%</b><span id="rLine"></span></div>
+    <div class="actions">
+      <button class="btn primary" id="retryWrongBtn" type="button">Bu səhvləri təkrarla</button>
+      <button class="btn" id="homeBtn" type="button">Yeni sınaq</button>
+    </div>
+  </div>
+  <div class="panel" id="reviewPanel">
+    <div class="label">Səhv cavabladığın suallar</div>
+    <div class="review" id="review"></div>
+  </div>
+</section>
+</main>
+</div>
+<script>
+const BUILTIN=[
+{"n": 1, "q": "Rentgen və γ şüalanmalarının ekspozisiya dozası vahidi olaraq nə qəbul edilmişdir?", "o": ["Kulon-kiloqram (Kl/kq)", "Rentgen/saat, zivert", "Rad və zivert", "Coul, R/saat", "Qrey, ber və rad"], "a": 0},
+{"n": 2, "q": "Mülki müdafiə üçün kadrların hazırlanmasını təşkil etmək və həyata keçirmək hansı nazirliyə aiddir?", "o": ["Dövlət Təhlükəsizliyi Xidməti", "Daxili İşlər Nazirliyi", "Maliyyə Nazirliyi", "Müdafiə Nazirliyi", "Fövqəladə Hallar Nazirliyi"], "a": 4},
+{"n": 3, "q": "Təbii hadisələr baş verdiyi zaman nəyə səbəb olur?", "o": ["Nüvə silahından istifadə zamanı partlayışların və yanğınların baş verməsinə, su qovşaqlarında, bəndlərdə, qaz borularında qəzaların əmələ gəlməsinə", "Bakterioloji silahdan istifadə zamanı heyvanların infeksion xəstəliklərə tutulmasına", "Külli miqdarda maddi vəsaitlərin məhvinə, insanların xəsarət almasına və həlak olmasına", "Kimyəvi silahın tətbiqi zamanı təbiətdəki yanğınlara", "Adi qırğın silahlarının törətdiyi dağıntılara"], "a": 2},
+{"n": 4, "q": "Observasiya rejimi nə deməkdir?", "o": ["Kimyəvi zəhərlənmələrin yayılmasının qarşısını almaq məqsədilə təcridetmə və müalicə-profilaktik tədbirlər sistemidir", "Adi qırğın vasitələrinin qarşısını almaq üçün həyata keçirilən tədbirlər sistemidir", "Yoluxucu xəstəliklərin yayılmasının qarşısını almaq məqsədilə məhdudlaşdırma, təcridetmə və müalicə-profilaktik tədbirlər sistemidir", "Zədələnmə ocaqlarında aparılan kəşfiyyat növüdür", "Radioaktiv zədələnmə ocağında aparılan nəzarət növüdür"], "a": 2},
+{"n": 5, "q": "Təyinatına, vericisinin tipinə, ölçülən şüalanmanın növünə və cihazın sxeminin çevirdiyi elektrik siqnallarının xarakterinə görə bütün cihazlar hansı qruplara ayrılır?", "o": ["Barometrlər, termometrlər, QKKC", "Radiometrlər, Rixter şkalası, psixometrlər", "Dozimetrlər, prorektorlar, Merkalli şkalası", "Bofort şkalası, yarımavtomat kimyəvi kəşfiyyat cihazı", "İndiqatorlar, rentgenmetrlər, radiometrlər, dozimetrlər"], "a": 4},
+{"n": 6, "q": "Kimyəvi zədələnmə ocağında təsir müddətinə görə difosgen hansı xassəyə malikdir?", "o": ["Vaxtı keçmiş zəhərli maddələrə", "Vaxtı qeyri-müəyyən zəhərli maddələrə", "Davamsız zəhərli maddələrə", "Davamlı, uzunmüddətli zəhərli maddələrə", "Vaxtdan asılı olan naməlum zəhərli maddələrə"], "a": 2},
+{"n": 7, "q": "Gözyaşardıcı təsirli ZM hansıdır?", "o": ["Xlor, amonyak", "Psilosibin, lüizit", "Xlorasetofenon, brombenzilsianid, xlorpikrin", "Tremorin, xlorsian", "Bi-zet, meskalin"], "a": 2},
+{"n": 8, "q": "Mülki müdafiə tələblərini pozan şəxsləri nə gözləyir?", "o": ["Azərbaycan Respublikasının qanunvericiliyi ilə məzəmmət etmək", "Azərbaycan Respublikasının qanunvericiliyi ilə şiddətli töhmət vermək", "Azərbaycan Respublikasının qanunvericiliyi ilə töhmət vermək", "Azərbaycan Respublikasının qanunvericiliyi ilə mükafat vermək", "Azərbaycan Respublikasının qanunvericiliyi ilə müəyyən olunmuş qaydada məsuliyyətə cəlb etmək"], "a": 4},
+{"n": 9, "q": "Sosial-siyasi xarakterli fövqəladə hadisələrin vaxtında qarşısı alınmasa, o, hansı xarakterli fövqəladə hadisəyə çevrilə bilər?", "o": ["İctimai-mədəni xarakterli fövqəladə hadisəyə", "Texnogen xarakterli fövqəladə hadisəyə", "Siyasi xarakterli fövqəladə hadisəyə", "Ekoloji xarakterli fövqəladə hadisəyə", "Hərbi xarakterli fövqəladə hadisəyə"], "a": 4},
+{"n": 10, "q": "Zəlzələ Yer kürəsinin əsasən hansı hissəsində (qatında) baş verir?", "o": ["Yerin alt qatlarında, litosfer tavalarında", "Epimərkəzdə, nüvədə", "Nüvədə, yer qabığında", "Təkcə kosmosda baş verir", "Ozon təbəqəsində baş verir"], "a": 0},
+{"n": 11, "q": "Kimləri mülki müdafiə dəstələrinə cəlb etmək məcburi deyil?", "o": ["45 yaşında kişiləri", "18 yaşında gəncləri", "55 yaşında kişiləri", "50 yaşında qadınları", "60 yaşında qadınları"], "a": 4},
+{"n": 12, "q": "Sülh dövründə mülki müdafiə dəstələri harada yaradılır?", "o": ["Kosmosda", "Fərdi avtomobillərdə", "Sərnişin avtobuslarında", "Qaz maskalarının istehsalı üçün ayrı-ayrı yerlərdə", "Ayrı-ayrı istehsalat obyektlərində"], "a": 4},
+{"n": 13, "q": "Bunlardan hansılar rayonun mülki müdafiə xidmətinə aid deyil?", "o": ["Rabitə xidməti", "Yanğından mühafizə xidməti", "Sosial xidmət", "Asayişi mühafizə xidməti", "Tibbi xidmət"], "a": 2},
+{"n": 14, "q": "Yanğından mühafizə xidməti harada təşkil edilir?", "o": ["Yanğından mühafizə təşkilatlarının bazası əsasında", "Rayon (şəhər) mülki müdafiə qərargahlarında", "Şəhərlərdə yolları mühafizə xidmətlərində", "Bakı Nəqliyyat Agentliyinin bazasında", "Rayon polis şöbələrində"], "a": 0},
+{"n": 15, "q": "MM dəstələrinin işinə qərargah və xidmət rəisləri vasitəsilə gündəlik kim rəhbərlik edir?", "o": ["Xidmət rəisi", "Rayonun icra başçısı", "İcra nümayəndəsi", "Qərargah rəisi", "Bələdiyyənin işçisi"], "a": 1},
+{"n": 16, "q": "Yığma komandalar (qruplar), xilasetmə dəstələri (komandalar, qruplar), yığma mexanikləşdirilmiş dəstələr (komandalar) hansı məqsədli dəstələr sayılırlar?", "o": ["Ümumi məqsədli dəstələr", "Tibbi yardım dəstələri", "İxtisaslaşdırılmış dəstələr", "Dozimetrik və kimyəvi nəzarət dəstələri", "Xüsusi təyinatlı dəstələr"], "a": 0},
+{"n": 17, "q": "Yüksək təhlükəli obyektlərdə hazırlıq dərəcəsinə görə hərbiləşdirilməmiş dəstələr hansı dəstələr sayılır?", "o": ["Tibbi yardım dəstələri", "İxtisaslaşdırılmış dəstələr", "Xüsusi təyinatlı dəstələr", "Ümumi məqsədli dəstələr", "Dozimetrik və kimyəvi nəzarət dəstələri"], "a": 1},
+{"n": 18, "q": "Rayon (şəhər) rabitə təşkilatının bazası əsasında hansı xidmət təşkil olunur?", "o": ["Asayişi mühafizə xidməti", "Rabitə xidməti", "Tibb xidməti", "Yanğından mühafizə xidməti", "Xilasedici dəstə"], "a": 1},
+{"n": 19, "q": "Tibb müəssisələrinin bazası əsasında hansı xidmət yaradılır?", "o": ["Tibb xidməti", "Asayişi mühafizə xidməti", "Yanğından mühafizə xidməti", "Xilasedici dəstə", "Yolları mühafizə xidməti"], "a": 0},
+{"n": 20, "q": "Yanğından mühafizə xidmətinə kim rəhbərlik edir?", "o": ["İcra nümayəndəsi", "Yanğından mühafizə xidmətinin rəisi və ya yanğından mühafizə müfəttişi", "Yolları mühafizə xidmətinin rəisi", "Polis şöbəsinin rəisi", "Bələdiyyə sədri"], "a": 1},
+{"n": 21, "q": "Hərbiləşdirilməmiş mülki müdafiə dəstələri tabeliyinə görə neçə növə bölünür?", "o": ["2 növə", "5 növə", "4 növə", "3 növə", "6 növə"], "a": 0},
+{"n": 22, "q": "Ərazi və sahə orqanları tərəfindən yaradılan hərbiləşdirilməmiş ümumi və xüsusi dəstələr kimin sərəncamına əsasən fəaliyyət göstərir?", "o": ["Ərazi və sahə orqanının sərəncamı ilə", "Sanitar-gigiyena xidmətinin sərəncamı ilə", "Maliyyə nazirinin sərəncamı ilə", "Kəşfiyyat xidmətinin sərəncamı ilə", "Daxili işlər nazirinin sərəncamı ilə"], "a": 0},
+{"n": 23, "q": "Ümumi məqsədli hərbiləşdirilməmiş dəstələr hansılardır?", "o": ["Yol patrul xidmətləri, Nəqliyyat Agentliyinin dəstələri", "Yığma komandalar, xilasetmə dəstələri, yığma mexanizasiya dəstələri", "Təcili tibbi yardım, yanğınsöndürmə xidməti", "Post-patrul dəstələri, daxili qoşun dəstələri", "Yolları mühafizə dəstələri, sürücülər"], "a": 1},
+{"n": 24, "q": "Mülki müdafiənin xüsusi tədbirlərini yerinə yetirmək məqsədilə mülki müdafiə qüvvə və vasitələrini hazırlamaq, qəza-xilasetmə və digər təxirəsalınmaz işlər aparılarkən qüvvə və vasitələrin fəaliyyətini təmin etmək üçün hansı xidmətlər yaradılır?", "o": ["Mülki müdafiə xidmətləri", "Bələdiyyə idarələri", "Qoşun dəstələri", "Aviasiya hissələrinin struktur bölməsi", "Daxili qoşun hissələri"], "a": 0},
+{"n": 25, "q": "Bunlardan hansılar hərbiləşdirilməmiş mülki müdafiə xidmət dəstələridir?", "o": ["Tibbi yardım, mühafizəçilər, daxili qoşunlar", "Yanğınsöndürmə, hava və yol patrul xidməti", "Kəşfiyyat, meşə təsərrüfatı xidməti, astronomik xidmət", "MM qoşun hissələri, yolları mühafizə xidməti", "Kəşfiyyat, tibbi yardım, yanğınsöndürmə, rabitə, radiasiya və kimyəvi nəzarət"], "a": 4},
+{"n": 26, "q": "Döyüş hazırlığı qrupu neçə nəfərdən ibarət ola bilər?", "o": ["Qrupun rəisi və 2–3 köməkçi", "Qrupun rəisi və 4–5 köməkçi", "Qrupun rəisi və 3–4 köməkçi", "Qrupun rəisi və 6–7 köməkçi", "Qrupun rəisi və 8–9 köməkçi"], "a": 0},
+{"n": 27, "q": "Mühəndis-texniki və radiasiyadan mühafizə qrupu neçə nəfərdən ibarətdir?", "o": ["Qrupun rəisi və 1–2 köməkçi", "Qrupun rəisi və 6–7 köməkçi", "Qrupun rəisi və 5–6 köməkçi", "Qrupun rəisi və 4–5 köməkçi", "Qrupun rəisi və 3–4 köməkçi"], "a": 0},
+{"n": 28, "q": "Heyvanları və bitkiləri mühafizə xidməti hansı idarələrin bazası əsasında təşkil olunur?", "o": ["Yanğından mühafizə təşkilatlarının bazasında", "Baytarlıq və aqronomiya idarələrinin bazasında", "Tibb müəssisələrinin bazasında", "Rayon polis şöbəsinin bazasında", "Rayon istehlak cəmiyyətinin bazasında"], "a": 1},
+{"n": 29, "q": "Ərzaq və paltarla təchizat xidməti hansı xidmətin bazası əsasında yaradılır?", "o": ["Tibb müəssisələrinin bazası əsasında", "Yanğından mühafizə təşkilatlarının bazası əsasında", "Baytarlıq və aqronomiya idarələrinin bazası əsasında", "Rayon polis şöbəsinin bazası əsasında", "Rayon istehlak cəmiyyəti və ticarət bazası əsasında"], "a": 4},
+{"n": 30, "q": "Xilasedici dəstə neçə komandadan ibarət olur?", "o": ["7–8 komandadan", "2–4 komandadan", "5–6 komandadan", "4–5 komandadan", "6–7 komandadan"], "a": 1},
+{"n": 31, "q": "Xilasedici dəstəyə zədələnmiş 600–1200 nəfəri zədələnmə ocağından çıxarıb 250–350 m məsafəyə daşımaq üçün nə qədər vaxt lazım olur?", "o": ["Bir iş növbəsi (8–10 saat) ərzində", "İki iş növbəsi (24 saat) ərzində", "20–25 saat ərzində", "Bir iş növbəsi (3–4 saat) ərzində", "Bir iş növbəsi (1–2 saat) ərzində"], "a": 0},
+{"n": 32, "q": "Kəşfiyyat qrupu neçə manqadan ibarət olur?", "o": ["5–7 manqadan", "2–3 manqadan", "3–5 manqadan", "9–10 manqadan", "7–9 manqadan"], "a": 2},
+{"n": 33, "q": "Zərərsizləşdirici komanda neçə qrupdan ibarət olur?", "o": ["7–8 qrupdan", "2–4 qrupdan", "6–7 qrupdan", "1–2 qrupdan", "4–6 qrupdan"], "a": 1},
+{"n": 34, "q": "Zərərsizləşdirici komanda 350–600 min kvadrat metr sahəni və ya 80–120 min kvadrat metr tikilini nə qədər müddətə deqazasiya edə bilər?", "o": ["4 gün ərzində", "Bir iş növbəsində", "İki iş növbəsində", "Üç iş növbəsində", "5 gün ərzində"], "a": 1},
+{"n": 35, "q": "Sanitar drujinaları dəstəsi neçə sanitar drujinasından ibarətdir?", "o": ["6–7 sanitar drujinasından", "4–5 sanitar drujinasından", "5–6 sanitar drujinasından", "7–8 sanitar drujinasından", "3–4 sanitar drujinasından"], "a": 1},
+{"n": 36, "q": "Sanitar drujinaları dəstəsinin şəxsi heyəti bir iş növbəsində nə qədər şəxsə ilk yardım göstərə bilər?", "o": ["2900–3000 şəxsə", "2800–2900 şəxsə", "2200–2700 şəxsə", "3500–3600 şəxsə", "3000–3500 şəxsə"], "a": 2},
+{"n": 37, "q": "Sanitar drujinaları neçə manqadan ibarətdir?", "o": ["7 manqadan", "5 manqadan", "6 manqadan", "3 manqadan", "8 manqadan"], "a": 1},
+{"n": 38, "q": "Obyektlərdə mülki müdafiə dəstələrinin və xidmətlərin yaradılmasında məqsəd nədir?", "o": ["Yalnız obyektlərin fövqəladə hallarda sabit işləməsi üçün şərait əldə etmək", "Fəhlə, qulluqçu, gəncləri, tələbələri (şagirdləri) qabaqcadan müasir qırğın vasitələrindən mühafizəyə hazırlamaq, obyektin fövqəladə hallarda sabit işləməsi üçün şərait yaratmaq", "Kosmik cihazları qabaqcadan müasir qırğın vasitələrindən mühafizəyə hazırlamaq", "Fəhlə, qulluqçu, gəncləri, tələbələri (şagirdləri) qabaqcadan müasir qırğın vasitələrindən istifadəyə hazırlamaq", "Fəhlə, qulluqçu, gəncləri, tələbələri (şagirdləri) qabaqcadan müasir qırğın vasitələrindən istifadəyə hazırlamaqla, obyektin fövqəladə hallarda yavaş-yavaş işləməsi üçün şərait yaratmaq"], "a": 1},
+{"n": 39, "q": "Qərargah heyətinin sayı konkret şəraitdən asılı olaraq neçə nəfərdən ibarət ola bilər?", "o": ["7–8 nəfərdən", "18–19 nəfərdən", "12–16 nəfərdən", "17–18 nəfərdən", "9–10 nəfərdən"], "a": 2},
+{"n": 40, "q": "Soyuq havada zəhərləyici maddələri müəyyən edərkən indikator borucuqlarının donunu açmaq üçün nədən istifadə olunur?", "o": ["Qoruyucu qalpaqlardan", "Nasosun dəstəyindən", "Tüstü əleyhinə süzgəclərdən", "Qızdırıcıdan", "Qaz sobasından"], "a": 3},
+{"n": 41, "q": "Rentgenmetrlər nə üçündür?", "o": ["Bakterioloji yoluxmanı ölçmək üçün", "Rentgen və ya γ şüalarının gücünü ölçmək üçün", "Kimyəvi zəhərlənməni ölçmək üçün", "β şüalarının gücünü ölçmək üçün", "α şüalarını ölçmək üçün"], "a": 1},
+{"n": 42, "q": "Bir qırmızı haşiyəli və qırmızı nöqtəli indikator borucuqları nə üçündür?", "o": ["Maddələr mübadiləsini pozan zəhərləyici maddələri aşkar etmək", "Yara əmələ gətirən maddələri aşkar etmək", "Ümumzəhərləyici maddələri aşkar etmək", "Boğucu təsirli maddələri aşkar etmək", "Sinir iflicedici ZM-ni aşkar etmək və qatılığını ölçmək"], "a": 4},
+{"n": 43, "q": "Bir sarı haşiyəli indikator borucuqları nə üçündür?", "o": ["Maddələr mübadiləsini pozan zəhərləyici maddələri aşkar etmək", "Sinir iflicedici zəhərləyici maddələri aşkar etmək", "Boğucu təsirli maddələri aşkar etmək", "Dəridə yara yaradan zəhərləyici maddələri aşkar etmək", "Ümumzəhərləyici maddələri aşkar etmək"], "a": 3},
+{"n": 44, "q": "Qoşun kimyəvi kəşfiyyat cihazı (QKKC) nəyi təyin etmək üçün nəzərdə tutulub?", "o": ["Adi qırğın vasitələrini təyin etmək üçün", "Radiasiyanı ölçmək üçün", "Bakterioloji yoluxmanı təyin etmək üçün", "Tikintini yoxlamaq üçün", "Əşyaların səthindəki zəhərli maddələri təyin etmək üçün"], "a": 4},
+{"n": 45, "q": "DP-64 hansı dozimetrlər qrupuna aiddir?", "o": ["İnfeksiya səviyyəsinin müəyyən edilməsinə", "İndikator-siqnalizatora (göstərici-siqnal cihazına)", "Zəhərli maddələrin göstəricisinə", "Kimyəvi çirklənmənin təyinedicisinə", "Fərdi dozimetrlərə"], "a": 1},
+{"n": 46, "q": "VX zəhərli kimyəvi maddəsini Qoşun Kimyəvi Kəşfiyyat Cihazındakı (QKKC) hansı rəngli indikator borucuqları aşkarlayır?", "o": ["1 qırmızı haşiyəli və qırmızı nöqtəli indikator borucuqları", "1 sarı və yaşıl haşiyəli indikator borucuqları", "2 qırmızı haşiyə, 1 yaşıl və 1 nöqtəli indikator borucuqları", "3 qırmızı nöqtəli, 3 yaşıl haşiyəli indikator borucuqları", "2 qırmızı və 2 yaşıl haşiyəli indikator borucuqları"], "a": 0},
+{"n": 47, "q": "Qoşun Kimyəvi Kəşfiyyat Cihazında (QKKC) neçə indikator borucuqları yığılmış kağız kaset olur?", "o": ["2 kağız kaset", "6 kağız kaset", "3 kağız kaset", "5 kağız kaset", "4 kağız kaset"], "a": 2},
+{"n": 48, "q": "Biokimyəvi metod nəyə deyilir?", "o": ["Zəhərləyici kimyəvi maddələrdə asetilxolinin hidrolizini həyata keçirən aktiv fermentin, xolinesterazın sinir iflicedici təsirinin zəiflədilməsinə əsaslanmışdır", "İonlaşma cərəyanı yaranır ki, bu cərəyanın kəmiyyəti dozanın gücü barədə fikir yaradır", "Parçalanma zamanı alınan enerjinin miqdarının dozanın gücü barədə fikir bildirməsinə", "Yaranan yeni maddənin miqdarının şüalanmanın dozasına düz mütənasib olmasına", "İşıq parıltısının miqdarının şüalanmanın gücünə düz mütənasib olmasına"], "a": 0},
+{"n": 49, "q": "İonlaşdırıcı şüalanmanın təsirini qiymətləndirmək üçün hansı xüsusiyyətlər nəzərə alınmalıdır?", "o": ["Biokimyəvi metod və əks etdirmə qabiliyyəti", "Radioaktiv şüaların ionlaşdırıcı və nüfuzetmə qabiliyyəti", "Güclü təsirli zəhərli maddələrin yayılması və zəiflədilməsi qabiliyyəti", "Bioloji yoluxmanın şiddəti və gücü", "Kimyəvi zəhərli maddələrin konsentrasiyası və nüfuzetmə qabiliyyəti"], "a": 1},
+{"n": 50, "q": "Kimyəvi metod nəyə əsaslanır?", "o": ["İonlaşma cərəyanının kəmiyyətinə görə dozanın gücü barədə fikir yürüdülməsinə", "Zəhərləyici kimyəvi maddə ilə reaktivin reaksiyası nəticəsində onun rənginin dəyişməsinin qeydə alınmasına", "İşıq parıltısının miqdarının şüalanmanın gücünə düz mütənasib olmasına", "Fotoplyonkanın qaralma dərəcəsinin şüalanmanın dozasından asılı olmasına", "Parçalanma zamanı alınan enerjinin miqdarının dozanın gücü barədə fikir bildirməsinə"], "a": 1},
+{"n": 51, "q": "DP-5A səhra radiometr-rentgenmetri nə üçündür?", "o": ["Texnikanın səthində λ şüalanması ilə radioaktiv çirklənməni ölçmək üçün", "γ şüalanma səviyyələrini və ərazinin, müxtəlif əşyaların γ şüalanması nəticəsində məruz qaldığı radioaktiv zəhərlənməni ölçmək üçün", "Kimyəvi maddələrin növünü aşkar etmək üçün", "Suda λ şüalarının səviyyəsini müəyyən etmək üçün", "Bioloji təsirə məruz qalmış insanlarda şüa dərəcəsini təyin etmək üçün"], "a": 1},
+{"n": 52, "q": "MM sistemində dozimetriyanın əsas vəzifələri nədən ibarətdir?", "o": ["Mülki müdafiə dəstələrinə təsir etməyən ionlaşdırıcı şüaları aşkar edib qiymətləndirməkdən", "Müxtəlif radiasiya şəraitində əhalinin, MM qoşunlarının və hərbiləşməmiş dəstələrin fəaliyyətini təmin etmək məqsədilə ionlaşdırıcı şüaları aşkar edib qiymətləndirməkdən", "Əhaliyə təsir edə biləcək bioloji yoluxmanı aşkar etmək, ölçmək və ona nəzarət etməkdən", "Ərazidə kimyəvi zəhərlənmənin səviyyəsini aşkar etməkdən", "Udulan dozanın miqdarını lazım olmayan halda müəyyən etmək üçün dozimetrlərin paylanmasını təşkil etməkdən"], "a": 1},
+{"n": 53, "q": "Radioaktiv maddələrin mövcud olduğu ərazidə dozimetrik cihazlar nəyə nəzarət edirlər?", "o": ["Hava şəraitinə", "Leysan yağışların yağmasına", "Ərazidə tüstünün yayılmasına", "MM dəstələrinə", "Şüalanma və radioaktiv zəhərlənmə dərəcəsinə"], "a": 4},
+{"n": 54, "q": "Üç yaşıl halqalı indikator borucuqları nə üçündür?", "o": ["Fosgen, sianid turşusu və xlorsianı ölçmək üçün", "Si-Es zəhərli maddəsini aşkarlamaq üçün", "Zarin və zomanı tapıb ölçmək üçün", "Bi-zetin konsentrasiyasını ölçmək üçün", "İpriti və lüiziti aşkarlayıb ölçmək üçün"], "a": 0},
+{"n": 55, "q": "Tüstü əleyhinə süzgəclər harada saxlanılır?", "o": ["Kağız kasetdə", "Yun parçada", "Tənzifdə bükülü halda", "Dəmir qabda", "Polietilen kisəcikdə"], "a": 4},
+{"n": 56, "q": "Qoşun Kimyəvi Kəşfiyyat Cihazındakı (QKKC) şüşə borucuqlarının adı nədir?", "o": ["Luminessensiya", "Saxlama cihazı", "İndikator", "Kondensat", "Fotolüminoforlar"], "a": 2},
+{"n": 57, "q": "Bunlardan hansılar dozimetrik cihazlardır?", "o": ["QP-7, QP-7V", "PDF-7, DP-6", "KZD və DP-7", "DP-22V, İD-1", "QP-5, QP-5M"], "a": 3},
+{"n": 58, "q": "Kimyəvi kəşfiyyat cihazındakı kağız kasetdə neçə qırmızı halqa və qırmızı nöqtə ilə işarələnmiş indikator borucuğu olur?", "o": ["6 indikator borucuğu", "12 indikator borucuğu", "9 indikator borucuğu", "8 indikator borucuğu", "10 indikator borucuğu"], "a": 4},
+{"n": 59, "q": "Ümumzəhərləyici maddələri aşkarlamaq üçün istifadə edilən borucuq necə işarələnib?", "o": ["Bir yaşıl halqa ilə", "Üç yaşıl halqa ilə", "Bir qırmızı halqa ilə", "Bir sarı halqa ilə", "İki yaşıl halqa ilə"], "a": 1},
+{"n": 60, "q": "İqtisad obyektlərində, yaxud AES-də işçilərin sayını nəzərə almaqla DP-22V dozimetr komplektində neçə ədəd fərdi dozimetr olur?", "o": ["10 ədəd", "30 ədəd", "40 ədəd", "20 ədəd", "50 ədəd"], "a": 4},
+{"n": 61, "q": "İD-1 dozaölçən fərdi dozimetrlər komplekti hansı udulan dozaları ölçmək üçündür?", "o": ["γ-neytron şüalanmasını", "Protonu", "α şüalarını", "Kimyəvi zəhərli maddələri", "β şüalarını"], "a": 0},
+{"n": 62, "q": "Qırmızı halqa və qırmızı nöqtə ilə işarələnən borucuqlar hansı zəhərləyici maddələri aşkarlayıb ölçmək üçündür?", "o": ["İprit, lüizit", "Si-Es", "Zarin, zoman, V-qazları", "Bi-zet", "Fosgen, difosgen"], "a": 2},
+{"n": 63, "q": "Qoşun kimyəvi kəşfiyyat cihazında (QKKC) ən əsas hissələrdən biri hansıdır?", "o": ["Kolpak", "Kürək", "Əl nasosu", "Süzgəc", "Fənər"], "a": 2},
+{"n": 64, "q": "DP-5A radiometr-rentgenmetr cihazını yüksək radiasiya səviyyələri olan sahələrdə işlətdikdən sonra nə etmək lazımdır?", "o": ["Deratizasiya etmək", "Dezaktivasiya etmək", "Dezinfeksiya etmək", "Dezinseksiya etmək", "Deqazasiya etmək"], "a": 1},
+{"n": 65, "q": "Təyinatına görə dozimetrik cihazlar neçə növə bölünürlər?", "o": ["3 növə", "2 növə", "4 növə", "6 növə", "5 növə"], "a": 2},
+{"n": 66, "q": "0,2 R/s-ə çatanda bu barədə səs və işıq siqnallarının verilməsini təmin edən cihaz hansıdır?", "o": ["DP-22V", "DP-64", "DP-5V", "İMD-21", "DP-5A"], "a": 1},
+{"n": 67, "q": "Yoluxucu xəstəliyin əlamətləri aşkara çıxan kimi hara xəbər vermək lazımdır?", "o": ["Bitkiləri mühafizə xidmətinə", "Tibb müəssisəsinə", "Mülki müdafiə xidmətinə", "Yanğınsöndürmə xidmətinə", "Rabitə xidmətinə"], "a": 1},
+{"n": 68, "q": "Şəhər və kənd yaşayış məntəqələrində bakterioloji silahın tətbiqi zamanı hansı xəstəlik yayılır?", "o": ["Psixokimyəvi", "Ağciyər ödemi", "Qıcıqlandırıcı", "Epidemiya", "Konyuktiv"], "a": 3},
+{"n": 69, "q": "Bioloji xarakterli fövqəladə hadisə necə baş verə bilər?", "o": ["Ərazidə epidemiyaların, virusların, müxtəlif xəstəliklərin yayılması ilə", "Radioaktiv maddələrin sızması ilə", "Əraziyə kimyəvi maddələrin dağılması nəticəsində müxtəlif xəstəliklərin yayılması ilə", "Müxtəlif hidrotexniki qurğuların dağılması, adamların tələf olması ilə", "Ayrı-ayrı yanğınların baş verməsi ilə"], "a": 0},
+{"n": 70, "q": "Bakterioloji silahın təsirindən əmələ gələn xəstəlik hansı yolla yayıla bilər?", "o": ["Tərəvəzlərin xəstəliyə yoluxması", "Havanın yoluxması", "Binaların xəstəliyə yoluxması", "Heyvanların zəhərlənməsi", "Ağacların xəstəliyə yoluxması"], "a": 1},
+{"n": 71, "q": "Bakterioloji silahın təsirindən heyvanlar arasında hansı xəstəliklər yayıla bilər?", "o": ["Huşun itməsi, tif, konyuktiv", "Quş qripi, donuz qripi, Sibir yarası, vəba və s.", "Üz nahiyəsində titrəmənin əmələ gəlməsi, mədə xorası", "Gözlərdə çəpliyin əmələ gəlməsi, şəkər xəstəliyi", "Alında qırışların əmələ gəlməsi, travma"], "a": 1},
+{"n": 72, "q": "Bioloji silahın tətbiqi zamanı əraziyə nə yayılır?", "o": ["Elektromaqnit impulsu, rikketsilər", "Bakteriya, virus, göbələk, mikrob və onlardan alınan zəhərli toksinlər", "İşıq şüalanması, göbələklər", "Travmatik xəstəliklər", "Radioaktiv və kimyəvi zəhərli maddələr"], "a": 1},
+{"n": 73, "q": "Bioloji zədələnmə ocağı nədir?", "o": ["Adi qırğın vasitələrindən istifadə zamanı kimyəvi zəhərlənməyə məruz qalan ərazidir", "Bioloji silahın tətbiqi nəticəsində külli miqdarda insan, heyvan və bitki tələfatı baş verən ərazidir", "Kimyəvi silahın tətbiqi zamanı dağıntılar olan, yanğınlar baş verən ərazidir", "Güclü yanğınlar və partlayışlar nəticəsində radioaktiv maddələrlə zəhərlənən ərazidir", "Nüvə silahının tətbiqi nəticəsində kimyəvi zəhərlənmə baş verən ərazidir"], "a": 1},
+{"n": 74, "q": "Karantin rejimi nə deməkdir?", "o": ["Bakterial yoluxma ocağını təcrid etmək, xəstəliklərin yayılmasının qarşısını almaq və yoluxmanı aradan qaldırmaq məqsədilə yerinə yetirilən epidemiya əleyhinə rejimli profilaktik tədbirlər sistemidir", "Radioaktiv vasitələrin zərərsizləşdirilməsi üçün tədbirlərdir", "Köçürmə tədbirlərinə nəzarət etmək üçün məntəqədir", "Adi qırğın vasitələrinə qarşı qabaqlayıcı tədbirdir", "Kimyəvi zədələnmə ocağından zəhərli maddələrin ətrafa yayılmasının qarşısını almaq üçün rejimli tədbirlər sistemidir"], "a": 0},
+{"n": 75, "q": "Mikroorqanizmlərin xüsusi sinfinə aid olan, ölçüləri çox kiçik, canlı toxumadan kənarda yaşaya bilməyən hüceyrədaxili parazitlər necə adlandırılır?", "o": ["Göbələklər", "Viruslar", "Observasiya", "Karantin", "Rikketsiyalar"], "a": 1},
+{"n": 76, "q": "Viruslar və bakteriyalar arasında yer tutan, quruluşuna, xarici görünüşünə və ölçülərinə görə bakteriyalara, hüceyrədaxili parazit olmasına görə viruslara oxşayan, qarın yatalağı və Ku-qızdırması kimi xəstəliklərin törədicisi nə adlanır?", "o": ["Viruslar", "Rikketsiyalar", "Vəba", "Göbələklər", "Taun"], "a": 1},
+{"n": 77, "q": "Bitki mənşəli olub mükəmməl quruluşa malik, fiziki və kimyəvi təsirlərə, günəş şüalarının təsirinə və qurumağa davamlı olan, koksidioidomikoz, kriptokokkoz və s. kimi xəstəliklərin törədicisi nə adlanır?", "o": ["Viruslar", "Şəxsi gigiyena", "Göbələklər", "Qoruyucu peyvəndlər", "Rikketsiyalar"], "a": 2},
+{"n": 78, "q": "İnkubasiya dövrü 1–3 gündür. Xəstəlik kəskin başlayır, ümumi zəiflik, titrətmə, baş ağrısı, yüksək hərarət, huşun alaqaranlığı qeyd olunur. Bu xəstəliyin adı nədir?", "o": ["Tulyaremiya", "Taun", "Botulizm", "Vəba", "Sibir yarası"], "a": 1},
+{"n": 79, "q": "İnkubasiya dövrü bir neçə saatdan 6 günədək, orta hesabla 1–3 gündür. Orqanizm sürətlə mayesini və çəkisini itirir, temperatur 35 dərəcədən aşağı düşür. Bu xəstəliyin adı nədir?", "o": ["Sibir yarası", "Botulizm", "Təbii çiçək", "Taun", "Vəba"], "a": 4},
+{"n": 80, "q": "Xəstə heyvanlardan insanlar dəri, tənəffüs yolları, mədə-bağırsaq yolu ilə yoluxur və müvafiq olaraq xəstəliyin dəri, ağciyər və bağırsaq formaları ayırd edilir. Bu xəstəliyin adı nədir?", "o": ["Sibir yarası", "Tulyaremiya", "Botulizm", "Vəba", "Taun"], "a": 0},
+{"n": 81, "q": "Yumşaq damaq, qırtlaq və üz əzələlərinin iflici baş verir. Mədə-bağırsaq əzələlərinin iflici nəticəsində meteorizm və davamlı qəbizlik yaranır. Tənəffüs üzvlərinin iflici nəticəsində ölüm halı baş verən xəstəliyin adı nədir?", "o": ["Təbii çiçək", "Sibir yarası", "Botulizm", "Vəba", "Tulyaremiya"], "a": 2},
+{"n": 82, "q": "Yoluxma tənəffüs yolları, həzm sistemi, selikli qişalar və dəridən baş verir. Hərarətin yüksəlməsi, baş və əzələ ağrıları ilə başlayır. Ağciyər, bağırsaq və tifoz forması ayırd edilən xəstəlik hansıdır?", "o": ["Sibir yarası", "Təbii çiçək", "Botulizm", "Taun", "Tulyaremiya"], "a": 4},
+{"n": 83, "q": "Viruslar tərəfindən törədilən, qızdırma və özündən sonra çapıqlar qoyan səpkilərlə xarakterizə olunan hansı xəstəlikdir?", "o": ["Təbii çiçək", "Sibir yarası", "Tulyaremiya", "Botulizm", "Vəba"], "a": 0},
+{"n": 84, "q": "Xəstə heyvanlardan insana keçən xəstəliklərə nə deyilir?", "o": ["Epifitotiya", "Zoonozlar", "Dezinfeksiya", "Epidemiya", "Kənd təsərrüfatı zərərvericiləri"], "a": 1},
+{"n": 85, "q": "Sibir yarası, tulyaremiya, salmonellyoz və parazit xəstəlikləri hansı məhsullar vasitəsilə yayılır?", "o": ["Ağaclar vasitəsilə", "Tərəvəzlər vasitəsilə", "Meyvələr vasitəsilə", "Hava vasitəsilə", "Yoluxmuş ət və ət məhsulları vasitəsilə"], "a": 4},
+{"n": 86, "q": "Vəba, dizenteriya, qarın yatalağı hansı məhsullar vasitəsilə ötürülür?", "o": ["Heyvanlar vasitəsilə", "Tərəvəzlər vasitəsilə", "Ot məhsulları vasitəsilə", "Yoluxmuş ət vasitəsilə", "Gəmiricilər vasitəsilə"], "a": 1},
+{"n": 87, "q": "Epidemik təhlükəliliyinə görə bakteriya və viruslar neçə qrupa bölünür?", "o": ["3 qrupa", "4 qrupa", "2 qrupa", "5 qrupa", "6 qrupa"], "a": 0},
+{"n": 88, "q": "Ümumi infeksiya mənbəyi və ümumi yoluxma yolu olan bir infeksion xəstəliyin müəyyən ərazidə geniş yayılmasına nə deyilir?", "o": ["Epidemiya", "Epifitotiya", "Epizootiya", "Enzootiya", "Kənd təsərrüfatı bitkilərinin zərərvericilərə məruz qalması"], "a": 0},
+{"n": 89, "q": "Bir ölkə və qitənin sərhədlərini aşan, böyük insan kütləsini əhatə edən güclü epidemiya nə adlanır?", "o": ["Epifitotiya", "Pandemiya", "Endemiya", "Enzootiya", "Epizootiya"], "a": 1},
+{"n": 90, "q": "Hər hansı bir xəstəliyin müəyyən ərazidə daimi rast gəlinməsinə nə deyilir?", "o": ["Epidemiya", "Endemiya", "Epifitotiya", "Pandemiya", "Enzootiya"], "a": 1},
+{"n": 91, "q": "İnfeksion xəstəlikdən qorunmağın əsas yollarından biri hansı qaydalara riayət etməkdən ibarətdir?", "o": ["Şəxsi gigiyena qaydalarına", "Bazarların sanitar vəziyyətini yaxşılaşdırmaq", "Saxlanma rejiminə nəzarət", "Nəqliyyat vasitələrinə nəzarət", "Kollektiv gigiyena qaydalarına"], "a": 0},
+{"n": 92, "q": "Epidemiya əleyhinə tədbirlər epidemik ocaqda infeksiyanın ləğvinə yönələn tədbirlər kompleksidir. Bu tədbirlər əsasən neçə istiqamətdə aparılır?", "o": ["4 istiqamətdə", "5 istiqamətdə", "2 istiqamətdə", "1 istiqamətdə", "3 istiqamətdə"], "a": 4},
+{"n": 93, "q": "Hansı hərbi sursat partladıqda boğuq səs eşidilir, ətrafa iri qəlpələr yayılaraq torpaq və bitki üzərində damcılar və tozşəkilli maddələr çökür?", "o": ["Bakterioloji sursat", "Fuqas sursatı", "Kimyəvi sursat", "Nüvə sursatı", "Qəlpəli sursat"], "a": 0},
+{"n": 94, "q": "Təcili profilaktika, xəstələrin və şübhəlilərin müəyyən olunması, təcrid olunması, qospitala göndərilməsi və müalicə olunması, əhalinin sanitar təmizlənməsi, ərazinin, nəqliyyatın, əşyaların və mənzillərin dezinfeksiyası hansı tədbirlərə aiddir?", "o": ["Epidemiya əleyhinə tədbirlərə", "Kimyəvi zəhərli maddələr əleyhinə tədbirlərə", "Radiasiya əleyhinə tədbirlərə", "Sosial ədalətsizlik əleyhinə tədbirlərə", "Siyasi mübarizə əleyhinə tədbirlərə"], "a": 0},
+{"n": 95, "q": "Kimyəvi qəzalar baş verdikdə və kimyəvi silahın tətbiqi zamanı fövqəladə halın mənbəyindən asılı olmayaraq insanlara, canlılara, ətraf mühitə və tikililərə təsir faktorları nə ilə xarakterizə olunur?", "o": ["Zəhərlənmə, zədələnmə ilə", "Bina və tikililərin dağıntıları ilə", "İstilik şüalanması ilə", "Zərbə dalğası ilə", "Virus və bakteriyalar ilə"], "a": 0},
+{"n": 96, "q": "Epidemiya, bakterioloji silah tətbiq edilən zaman ətraf mühitə, insanlara və canlılara necə təsir göstərir?", "o": ["Termiki təsir", "Radioaktiv təsir", "Bioloji təsir", "Mexaniki təsir", "Toksikoloji təsir"], "a": 2},
+{"n": 97, "q": "Qəlpələr, binaların dağılması, sel və sürüşmə ətraf mühitə hansı təsiri göstərir?", "o": ["Mexaniki təsir", "Termiki təsir", "Bioloji təsir", "Təzyiq təsiri", "Toksikoloji təsir"], "a": 0},
+{"n": 98, "q": "Radioaktiv təhlükəli obyektlərdə texnogen qəzalar və nüvə partlayışları zamanı hansı təsir meydana çıxır?", "o": ["Toksikoloji təsir", "Mexaniki təsir", "Radioaktiv təsir", "Bioloji təsir", "Təzyiq təsiri"], "a": 2},
+{"n": 99, "q": "Partlayıcı maddələrin, qaz buludlarının, adi və kütləvi qırğın vasitələrinin partlayışı nəticəsində nə baş verir?", "o": ["Təzyiq təsiri", "Mexaniki təsir", "Radioaktiv təsir", "Toksikoloji təsir", "Termiki təsir"], "a": 0},
+{"n": 100, "q": "Texnogen və təbii yanğınlar zamanı istilik şüalanması və nüvə partlayışı nəticəsində hansı təsir əmələ gəlir?", "o": ["Bioloji təsir", "Toksikoloji təsir", "Mexaniki təsir", "Təzyiq təsiri", "Termiki təsir"], "a": 4},
+{"n": 101, "q": "Təhlükəli kimyəvi istehsalatda texnogen qəzalar, kimyəvi silahın tətbiqi və vulkan püskürməsi zamanı zəhərli qazların ayrılması nəticəsində ətraf mühit hansı təsirə məruz qalır?", "o": ["Toksikoloji təsirə", "Bioloji təsirə", "Mexaniki təsirə", "Radioaktiv təsirə", "Termiki təsirə"], "a": 0},
+{"n": 102, "q": "Kimyəvi zədələnmə ocağında Si-Es zəhərli maddəsi necə təsir göstərir?", "o": ["Ərazidə canlılarda boğucu təsir güclənir", "Ərazidə canlılara qıcıqlandırıcı təsir göstərir", "Ərazidə canlıların sinir sisteminin iflicini gücləndirir", "Ərazidə canlılarda dəri-zöhrəvi yaralar əmələ gətirir", "Ərazidə canlılar arasında virusların yayılması baş verir"], "a": 1},
+{"n": 103, "q": "Kimyəvi zədələnmə ocağı nəyə deyilir?", "o": ["Bioloji silahın tətbiqi zamanı radioaktiv zəhərlənməyə məruz qalan ərazidir", "Adi silahların tətbiqi zamanı güclü dağıntılar və maddi sərvətlər məhv olan və heyvan tələfatı olan ərazidir", "Nüvə silahının tətbiqi zamanı dağıntılar, partlayışlar baş verən, qurğular dağılan ərazidir", "Kimyəvi silahın tətbiqi zamanı bioloji təsir nəticəsində insan tələfatı olan ərazidir", "Kimyəvi silahın tətbiqi zamanı zəhərli maddələr və ya güclü təsirli zəhərli maddələrin təsiri nəticəsində əhalinin, heyvanların və bitkilərin zədələnməsi baş verən ərazidir"], "a": 4},
+{"n": 104, "q": "Zəhərləyici maddələr fizioloji təsirinə görə neçə qrupa bölünür?", "o": ["3 qrupa", "7 qrupa", "4 qrupa", "5 qrupa", "6 qrupa"], "a": 1},
+{"n": 105, "q": "Bunlardan hansılar dəridə yara əmələ gətirən zəhərli maddələrdir?", "o": ["Fosgen, difosgen", "İprit, lüizit", "Zoman, sianid turşusu", "Xlorsian, zarin", "VX qazı, xlor"], "a": 1},
+{"n": 106, "q": "Ümumzəhərləyici təsirli zəhərli maddələr hansılardır?", "o": ["İprit, lüizit", "Sianid turşusu, xlorsian", "VX qazı, brombenzilsianid", "Difosgen, fosgen", "Zarin, zoman"], "a": 1},
+{"n": 107, "q": "Kimyəvi silah nədir?", "o": ["Adi qırğın silahlarından biridir, nüfuzedici təsirə malikdir", "Güclü təsirli maddələri ətrafa yayan vasitələr, zəhərləyici təsiri olmayan maddələrdir", "Kütləvi qırğın silahıdır və bakterioloji maddələrin tətbiqi ilə yaranan və az təsir edən silah növüdür", "Kütləvi qırğın silahlarından biridir, radioaktiv təsir edən silah növüdür", "Kütləvi qırğın silahlarından biri olub, zəhərləyici maddələr və onları tətbiq etmək üçün istifadə olunan vasitələrə deyilir"], "a": 4},
+{"n": 108, "q": "Psixokimyəvi təsirli ZM hansılardır?", "o": ["Premorin, zarin, tremorin", "Sianid turşusu, meskalin, fosgen", "Bi-zet (BZ), LSD (lizerqin turşusunun törəmələri), psilosibin, tremorin, meskalin", "Difosgen, xlorsian, psilosibin", "Zoman, Bi-zet, Si-Es"], "a": 2},
+{"n": 109, "q": "Kimyəvi zədələnmə ocağında fosgen və difosgen insan orqanizminin üzvlərinə necə təsir göstərir?", "o": ["Ərazidə canlılar arasında malyariya xəstəliyi artır", "Ərazidə canlılara boğucu təsir göstərir", "Ərazidə canlılar arasında psixomimetik təsir güclənir", "Ərazidə canlılar arasında sinir-patoloji təsir güclənir", "Ərazidə canlılar arasında dəri-zöhrəvi yaralar əmələ gətirir"], "a": 1},
+{"n": 110, "q": "Sinir iflicedici təsirli zəhərli maddələrin kimyəvi strukturuna hansı maddələr aiddir?", "o": ["Fosgen, difosgen", "Zarin, zoman, V-qazları", "Xlorsian, sianid turşusu", "Adamsit, tremorin", "Xlor, amonyak"], "a": 1},
+{"n": 111, "q": "İnsan orqanizminə Bi-zet necə təsir göstərir?", "o": ["Canlılar arasında boğulmalar güclənir", "Psixokimyəvi təsir göstərir", "Canlılar arasında sinir sisteminin iflici güclənir", "Canlılarda dəri-zöhrəvi yaralar əmələ gətirir", "Canlılar arasında qrip xəstəliyi güclənir"], "a": 1},
+{"n": 112, "q": "Kimyəvi silahdan istifadə edərkən əsasən nəyə təsir edir?", "o": ["Neytron silahının partlamasına uyğundur", "Bakterioloji silaha bənzəyir", "Şəxsi heyətin döyüş, əhalinin isə əmək qabiliyyətinin zəifləməsinə", "Ətrafa radioaktiv zərrəciklər yayılır", "Təsiri yoxdur"], "a": 2},
+{"n": 113, "q": "Dərini zədələyən zəhərli maddələr hansılardır?", "o": ["Fosgen, difosgen", "Texniki iprit, azotlu iprit, saf iprit, lüizit", "V-qazları, sianid turşusu", "Meskalin, Bi-zet", "Xlorsian, LSD"], "a": 1},
+{"n": 114, "q": "Bunlardan hansı güclü təsirli zəhərli maddədir (GTZM)?", "o": ["Xlor", "İprit", "Zarin", "Difosgen", "Zoman"], "a": 0},
+{"n": 115, "q": "Xlorasetofenon, brombenzilsianid, xlorpikrin hansı zəhərli maddələrə (ZM) aiddir?", "o": ["Psixokimyəvi təsirli ZM", "Gözyaşardıcı təsirli ZM", "Dərini zədələyən ZM", "Sinir iflicedici təsirli ZM", "Boğucu təsirli ZM"], "a": 1},
+{"n": 116, "q": "Kimyəvi zədələnmə ocağında zarin, zoman, VX qazları (fosforiltioxolinlər) necə təsir göstərir?", "o": ["Ərazidə canlılar arasında dəri-zöhrəvi yaralar əmələ gətirir", "Ərazidə canlıların sinir sistemini iflic edir", "Ərazidə canlılar arasında tif xəstəliyi yayılır", "Ərazidə canlılar arasında bakterioloji xəstəliklər yayılır", "Ərazidə canlılar arasında xolera xəstəliyi yayılır"], "a": 1},
+{"n": 117, "q": "Məlum olan bütün zəhərləyici maddələr orqanizmə təsirinin xarakterinə, döyüş təyinatına və ərazidə zəhərlənmənin davamlılığına görə hansı qruplardan ibarətdir?", "o": ["Təşkilati və adi", "Toksikoloji və taktiki", "Mexaniki və texniki", "Texnoloji və istehsalat", "Kimyəvi və radioaktiv"], "a": 1},
+{"n": 118, "q": "Havanın aşağı qatları yuxarı qatlara nisbətən soyuq olan hal necə adlanır?", "o": ["İnversiya", "İzotermiya", "Konsepsiya", "İnfeksiya", "Konveksiya"], "a": 0},
+{"n": 119, "q": "Havanın stabil tarazlığı ilə xarakterizə olunan hal necə adlanır?", "o": ["Konveksiya", "İnfeksiya", "İzotermiya", "Konsepsiya", "İnversiya"], "a": 2},
+{"n": 120, "q": "Günəş çıxmazdan 2 saat öncə yaranan və batmazdan təxminən 2–2,5 saat qabaq dağılan hal necə adlanır?", "o": ["İzotermiya", "Kommunikə", "İnversiya", "Konveksiya", "İnfeksiya"], "a": 3},
+{"n": 121, "q": "Beynəlxalq sistemdə hər kiloqrama düşən udulan dozanın vahidi olaraq nə qəbul edilmişdir?", "o": ["C/kq", "Rad/saat", "Bekkerel", "Qrey", "Rentgen/san"], "a": 0},
+{"n": 122, "q": "Zərbə dalğasının zədələyici təsirini xarakterizə edən əsas parametrlər hansılardır?", "o": ["Nüvə silahını hədəfə çatdırmaq", "Adi silahın tətbiqi", "Hər cür zəhərli təsir", "Elektromaqnit impulsu", "İzafi təzyiq, dalğanın sürət təzyiqi və izafi təzyiqin təsir müddəti"], "a": 4},
+{"n": 123, "q": "İşıq impulsunun ölçü vahidi olaraq nə qəbul edilmişdir?", "o": ["kal/sm²", "kkal/sm", "kC/sm², R/saat", "kC/m", "kC/m² və ya kal/sm²"], "a": 0},
+{"n": 124, "q": "Hansı radioaktiv hissəcik ən yüksək nüfuz dərəcəsinə malikdir və çox təhlükəlidir?", "o": ["Beta", "Zeta", "Qamma", "Alfa", "Proton axını"], "a": 2},
+{"n": 125, "q": "Zərbə dalğasına məruz qaldıqda bir neçə dağılma zonası görünür. Güclü dağılma zonasında izafi təzyiq nə qədərdir?", "o": ["20–10 kPa", "10–5 kPa", "50–30 kPa", "30–20 kPa", "60–50 kPa"], "a": 2},
+{"n": 126, "q": "Zərbə dalğasına məruz qaldıqda bir neçə dağılma zonası görünür. Orta dağılma zonasında izafi təzyiq nə qədərdir?", "o": ["20–10 kPa", "40–30 kPa", "10–5 kPa", "30–20 kPa", "50–40 kPa"], "a": 3},
+{"n": 127, "q": "Zərbə dalğasına məruz qaldıqda bir neçə məhv zonası görünür. İzafi təzyiq 20–10 kPa olarsa, dağılma zonası necə adlanır?", "o": ["Zəif dağılma zonası", "Seçici dağılma zonası", "Tam dağılma zonası", "Güclü dağılma zonası", "Orta dağılma zonası"], "a": 0},
+{"n": 128, "q": "Radiobiologiyada udulan dozanın sistemdənkənar ölçü vahidi hansıdır?", "o": ["Qrey", "Klon", "Rad", "Bekkerel", "Rentgen"], "a": 2},
+{"n": 129, "q": "Zərbə dalğasına məruz qaldıqda bir neçə məhv zonası görünür. İzafi təzyiq 50–30 kPa olarsa, dağılma zonası necə adlanır?", "o": ["Mülayim dağılma zonası", "Seçici dağılma zonası", "Güclü dağılma zonası", "Tam dağılma zonası", "Orta dağılma zonası"], "a": 2},
+{"n": 130, "q": "İzafi təzyiq 30–20 kPa olarsa, dağılma zonası necə adlanır?", "o": ["Zəif dağılma zonası", "Seçici dağılma zonası", "Orta dağılma zonası", "Tam dağılma zonası", "Güclü dağılma zonası"], "a": 2},
+{"n": 131, "q": "Tam dağıntılar ərazisində hansı növ yanğın əmələ gəlir?", "o": ["Bütöv yanğın", "Tək-tək yanğın", "Yanğın əmələ gəlmir, tüstülənmə ola bilər", "Natamam yanğın", "Alovlanma"], "a": 2},
+{"n": 132, "q": "Neytron silahının əsas xüsusiyyətləri hansıdır?", "o": ["Güclü istilikli nüvə sursatı olub, zədələyici təsiri alfa selidir", "Zəif istilikli nüvə sursatı olub, zədələyici təsiri neytron selidir", "Orta istilikli nüvə sursatı olub, neon selidir", "Güclü istilikli nüvə sursatı olub, zədələyici təsiri beta selidir", "Güclü istilikli nüvə sursatı olub, zədələyici təsiri proton selidir"], "a": 1},
+{"n": 133, "q": "Həcmli partlayış döyüş silahı (sursat) nədir?", "o": ["Yalnız binaları deformasiyaya uğratmaq üçün nəzərdə tutulub", "Hava şok dalğası və yanğınla insanları, binaları, tikililəri və avadanlıqları məhv etmək üçün nəzərdə tutulmuşdur", "Yeraltı şok dalğası və avadanlıqların, fərdi mühafizə vasitələrinin yanğınla məhv edilməsi üçün nəzərdə tutulmuşdur", "Yalnız bitkiləri və avadanlıqları məhv etmək üçün nəzərdə tutulmuşdur", "İnsanların, binaların, tikililərin və avadanlıqların yanğınla məhv edilməməsi üçün nəzərdə tutulmuşdur"], "a": 1},
+{"n": 134, "q": "Nüfuzedici radiasiya nədir?", "o": ["Nüvə partlayışı anında ətrafa yayılan gözə görünməyən pozitron selidir", "Nüvə partlayışı anında ətrafa yayılan neon selidir", "Nüvə partlayışı anında ətrafa yayılan günəş şüaları selidir", "Nüvə partlayışı anında partlayış yerindən ətrafa yayılan gözə görünən γ şüaları və proton selidir", "Nüvə partlayışı anında partlayış yerindən ətrafa yayılan gözə görünməyən γ şüaları və neytron selidir"], "a": 4},
+{"n": 135, "q": "Nüvə partlayışı zamanı tam dağılma zonası nə ilə xarakterizə olunur?", "o": ["10–20 kPa-dan çox təzyiq, ərazidə müxtəlif yerlərdə yanğınlar, bina və tikililərin tamamilə məhv edilməsi", "30–50 kPa həddində təzyiq, qismən yanğınlar və bina və tikililərin natamam dağılması (deformasiyalar və yerdəyişmələr) baş verir", "20–30 kPa həddində təzyiq, partlayış zonasında davamlı yanğınlar, bina və tikililərin qismən məhv edilməsi müşahidə olunur", "Yüngül radiasiya ilə alovlanan binalar və obyektlər səpələnir və dağıntılarla örtülür, alov ultrabənövşəyi və infraqırmızı şüalarla əhatə olunur", "50 kPa-dan artıq təzyiqdə yanğınlar baş vermir, istehsalat və yaşayış binaları tamamilə dağılır. Ona görə də dağıntılarda yanma yox, tüstülənmə müşahidə olunur"], "a": 4},
+{"n": 136, "q": "Hansı materiallar müxtəlif qalınlıqlardan keçərkən nüfuzedici radiasiyanı iki dəfə zəiflədir?", "o": ["Ağac 55 sm, torpaq 35 sm, beton 15 sm, polad 18 sm, qurğuşun 13 sm, su 25 sm", "Ağac 30 sm, torpaq 14 sm, beton 10 sm, polad 2,7 sm, su 23 sm", "Ağac 50 sm, torpaq 15 sm, beton 12 sm, polad 10 sm, qurğuşun 8 sm, su 14 sm", "Ağac 20 sm, torpaq 25 sm, beton 9 sm, polad 5 sm, qurğuşun 3 sm, su 12 sm", "Ağac 10 sm, torpaq 4 sm, beton 11 sm, polad 7 sm, qurğuşun 5 sm, su 7 sm"], "a": 1},
+{"n": 137, "q": "İşıq şüalanması zamanı üçüncü dərəcəli yanıqda dəridə nə baş verir?", "o": ["Dərinin bütün dərinliyi üzrə tam yanması", "Dəridə qızartı və qaralmaların əmələ gəlməsi", "Dəridə suluqların deşilməsi", "Dərinin bütün hissəsinin göynəməsi", "Dərinin bütün dərinliyində toxumalara təsirinin zəif olması"], "a": 0},
+{"n": 138, "q": "Yerüstü partlayış zamanı nüvə yükünün gücündən asılı olaraq işıq şüalanmasının təsir müddəti nə qədərdir?", "o": ["10–20 saniyə", "8–10 dəqiqə", "21–24 saniyə", "25–35 saniyə", "10–30 dəqiqə"], "a": 0},
+{"n": 139, "q": "Nüfuzedici radiasiya, qamma şüalanması da nəzərə alınmaqla, ətraf mühitə neçə saniyə təsir göstərir?", "o": ["8–10 saniyə", "5–8 saniyə", "10–15 saniyə", "6–7 saniyə", "9–12 saniyə"], "a": 2},
+{"n": 140, "q": "Nüfuzedici radiasiya əsasən nəyə təsir edir?", "o": ["Su ilə birlikdə meşələrə", "Bitkilərlə birlikdə tikintilərə", "Heyvan və insan orqanizminə", "Canlıların işlətdiyi ehtiyaclara və silaha", "Üzvi əridicilərə və dağlara"], "a": 2},
+{"n": 141, "q": "İşıq şüalanması nədir?", "o": ["Nüvə partlayışı zamanı meydana çıxan od kürəsinin saçdığı gözə görünən, ultrabənövşəyi və infraqırmızı şüalanma selidir", "Nüvə partlayışı zamanı meydana çıxan od kürəsinin saçdığı lazer və rentgen şüalarının selidir", "Nüvə partlayışı zamanı meydana çıxan od kürəsinin saçdığı proton şüalarıdır", "Nüvə partlayışı zamanı meydana çıxan od kürəsindən ətrafa yayılan adi bənövşəyi işıq şüası selidir", "Nüvə partlayışı zamanı meydana çıxan gözəgörünməz şüalar dalğasıdır"], "a": 0},
+{"n": 142, "q": "Elektromaqnit impulsu canlı orqanizmə hansı yolla təsir göstərir?", "o": ["Avtomatik idarəetmə sistemi ilə birbaşa əlaqədə olduqda", "QKKC cihazlarından istifadə olunarkən", "Dozimetrik cihazlardan istifadə olunduqda", "Biokimyəvi metoddan istifadə zamanı", "DP-64 cihazından istifadə etdikdə"], "a": 0},
+{"n": 143, "q": "Elektromaqnit impulsundan mühafizə nəyə əsaslanır?", "o": ["Mühafizəçilərin iş qabiliyyətinə", "Avtomatik sistemlərin yerlə əlaqəsinə", "Radioprotektorların çəkisinə", "Mobil sistemlərin quruluşuna", "İdarəetmə məntəqəsinin quruluşuna"], "a": 1},
+{"n": 144, "q": "Nüvə zədələnmə ocağı nədir?", "o": ["Nüvə partlayışının zədələyici amillərinin təsiri nəticəsində külli miqdarda insan, heyvan və bitki tələfatı olan, bina və qurğular dağılan ərazi hesab edilir", "Orada zərbə dalğasının təsirindən güclü dağıntılar baş versin, ətraf ərazi GTZM ilə çirklənən ərazidir", "Bitki tələfatı olsun, yer kimyəvi zəhərlənməyə məruz qalsın", "Orada kimyəvi silah tətbiq olunduğu sahədir ki, insanlar tələf olur, ətraf zəhərlənir", "Orada bioloji yoluxma zamanı külli miqdarda heyvan tələfatı baş versin, binalar salamat qalsın"], "a": 0},
+{"n": 145, "q": "Nüfuzedici radiasiyanın təsiri udulan doza ilə qiymətləndirilir. Hansı ölçü vahidləri ilə ölçülür?", "o": ["Kulon, m/s", "km, sm²", "Bk/m, kkal/sm", "kPa, bar", "Qrey, rentgen və rad ölçü vahidləri ilə"], "a": 4},
+{"n": 146, "q": "Nüvə silahının zədələyici amilləri hansılardır?", "o": ["Radioaktiv zəhərlənmə, daşqınların yaranması", "Nüfuzedici təsir, şəffaflıq, yoluxucu xəstəliyin yaranması", "Zərbə dalğası, işıq şüalanması, nüfuzedici radiasiya, yerin radioaktiv zəhərlənməsi, elektromaqnit impulsu", "Epizootik yoluxma, işıq şüalanması, ildırım çaxması", "İşıq şüalanması, kimyəvi zəhərlənmə, partlayışların olması"], "a": 2},
+{"n": 147, "q": "Radioaktiv maddələr hansı qabiliyyətə malik deyillər?", "o": ["Gözlə görünməyə, mayeləşməyə, xəstəlik törətməyə", "Dada, süzülməyə, hüceyrələri çoxaltmağa", "Hiss olunmağa, buxarlanmağa, çəkiyə", "Durulaşmaya, iyə, qatılaşmağa", "Qoxuya, rəngə, dada, gözlə görünməyə"], "a": 4},
+{"n": 148, "q": "Nüfuzedici radiasiyanın insana təsiri nə ilə xarakterizə olunur?", "o": ["Udulan doza ilə", "İntensivlik və vaxt ilə", "Kimyəvi zəhərlənmə ilə", "Bioloji yoluxma ilə", "Çəkisi ilə"], "a": 0},
+{"n": 149, "q": "Təbii, ekoloji, texnogen, sosial-siyasi və hərbi xarakterli fövqəladə hallar hansı növ fövqəladə hallara aiddir?", "o": ["Fiziki xassələrinə görə", "Kimyəvi xassələrinə görə", "Mənsubiyyətinə görə", "Başvermə sahələrinə görə", "Miqyasına görə"], "a": 3},
+{"n": 150, "q": "Fövqəladə hadisələri cəm halında götürsək, hansı növlərə bölmək olar?", "o": ["Texnogen, məişət, ekoloji", "Münaqişəli və münaqişəsiz", "Münaqişəsiz, texnoloji", "Münaqişəli, təbii", "Məişət, hərbi, siyasi"], "a": 1},
+{"n": 151, "q": "Zəlzələnin maqnitudası hansı şkala ilə ölçülür?", "o": ["14 ballıq Rixter şkalası ilə", "16 ballıq Rixter şkalası ilə", "9 ballıq Rixter şkalası ilə", "7 ballıq Rixter şkalası ilə", "11 ballıq Rixter şkalası ilə"], "a": 2},
+{"n": 152, "q": "Fövqəladə hallar ağırlıq dərəcələrinə görə necə xarakterizə olunur?", "o": ["Yüngül, orta, ağır, çox ağır", "Ağır, kənddaxili, respublika miqyaslı", "Orta ağırlıqlı, şəhərdaxili, milli faciə", "Keçilməz, orta ağır, dini zəmində", "Regional, dəhşətli, ölkə miqyaslı"], "a": 0},
+{"n": 153, "q": "Sellər növlərinə görə hansılardır?", "o": ["Qarın əriməsi və payız selləri", "Düzkanallı sellər, struktursuz sellər", "Yeraltı daşqınlar və yerüstü sellər", "Dolu yağan zaman baş verən sellər", "Turbulentli sellər, strukturlu sellər"], "a": 4},
+{"n": 154, "q": "Vulkanik zəlzələlər nədən əmələ gəlir?", "o": ["Vulkan püskürməsindən", "Yeraltı nüvə partlayışından", "Yeraltı qazların sızmasından", "Yerüstü parçalanmalardan", "Yeraltı çatlardan"], "a": 0},
+{"n": 155, "q": "Nəticələrin miqyasına görə fövqəladə hallar necə təsnif olunur?", "o": ["Məişətdə baş verən, obyektdaxili və xarici FH", "Lokal, obyekt miqyaslı, yerli, regional, milli və qlobal FH", "Lokal, sosial-mədəni, siyasi xarakterli FH", "Nəqliyyatda baş verən, şəhərdaxili FH", "Tikintidə baş verən, hərbi xarakterli FH"], "a": 1},
+{"n": 156, "q": "Ekoloji xarakterli fövqəladə hallar necə təsnif olunur?", "o": ["Bitki örtüyünün yoluxucu xəstəliyə tutulması, meşələrin yanması və məişət qəzaları ilə", "Hidrosferin, atmosferin, biosferin və yerin tərkibinin dəyişməsi ilə", "Meşələrin və dənizlərin bioloji təsirə məruz qalması, yanması və göllərin qurumaması ilə", "Ərazidə partlayışın baş verməsi, sənaye müəssisələrinin qəzaya uğraması, ozon dəliyi ilə", "Gəmiricilərin geniş əraziyə yayılması, kimyəvi zəhərlənmə ilə"], "a": 1},
+{"n": 157, "q": "Siyasi xarakterli fövqəladə hallar hansılardır?", "o": ["Ərazi, qohumluq və yaş həddi əlamətləri üzrə", "Millətlərarası münaqişələr, narkotik maddə ticarəti, mütəşəkkil cinayətkarlıq, “kölgə” iqtisadiyyatı, dövlət böhranı", "Peşə, dini və mülkiyyət əlaməti üzrə", "Şəhər üzərində temperatur inversiyası yaranması", "Şəhərlərdə səs-küyün yol verilən hədd səviyyəsindən xeyli yüksək olması"], "a": 1},
+{"n": 158, "q": "Fövqəladə hallar nəyə deyilir?", "o": ["İnsan tələfatına və maddi itkilərə səbəb olmayan hadisə nəticəsində yaranmış vəziyyətə deyilir", "Tək-tək yanğınlar nəticəsində yaranmış vəziyyətə deyilir", "İnsan tələfatına, ətraf mühitə ziyan vurulmasına və əhəmiyyətli maddi itkilərə səbəb ola bilən hadisədir", "İki avtomobilin toqquşması zamanı yaranmış vəziyyətə deyilir", "Məişət qəzaları zamanı yaranan zədə ocaqlarına deyilir"], "a": 2},
+{"n": 159, "q": "Tikinti materialları və konstruksiyaların yanma qabiliyyətinə görə inşaat materialları hansı qruplara bölünür?", "o": ["Közərən və oda davamlı", "Yanan, çətin yanan, yanmayan", "Əriyən və tüstülənən", "Yüksək təzyiqli və əriyən", "İstilik verən və alovlanan"], "a": 1},
+{"n": 160, "q": "Münaqişəli fövqəladə hadisələr hansılardır?", "o": ["Terrorizm, tüğyan edən cinayətkarlıq, hərbi toqquşmalar, ekstremist siyasi mübarizə, milli və dini zəmində münaqişələr", "Miqyaslı tətillər, kütləvi iğtişaşlar", "Ekoloji mübarizə, sosial ədalət", "Siyasi dözümlülük, yanğınların törədilməsi", "Siyasi narazılıqlar, sosial durğunluq"], "a": 0},
+{"n": 161, "q": "Sosial-mədəni xarakterli fövqəladə hadisələrə hansılar aiddir?", "o": ["Peşə, din, mülkiyyət, ərazi, qohumluq, yaş həddi əlamətləri", "İqtisadi böhranların sosial həyata təsirinin kəskinləşməsi", "Sosial yardımların gecikdirilməsi və ya verilməməsi", "Əhalinin banklarda qalan əmanətinin verilməməsi", "İqtisadi qanunların düzgün tətbiq edilməməsi"], "a": 0},
+{"n": 162, "q": "Aşağıdakı hansı hadisələr sürüşmələrə səbəb ola bilər?", "o": ["Qasırğa", "Tornado", "Leysan yağışları", "Qar çovğunu", "Tayfun"], "a": 2},
+{"n": 163, "q": "Başvermə sahələrinə görə fövqəladə hallar hansılardır?", "o": ["Təbii, texnogen, ekoloji, sosial-siyasi və hərbi xarakterli FH", "Obyekt, yerli, lokal", "Regional, milli, qlobal", "Tikintidə, idarəetmə mənsubiyyətinə görə", "Meşə təsərrüfatında, nəqliyyatda və sənayedə"], "a": 0},
+{"n": 164, "q": "Merkalli cədvəlinə əsasən zəlzələnin intensivliyi maksimum neçə balla ölçülür?", "o": ["10 bal", "13 bal", "12 bal", "14 bal", "11 bal"], "a": 2},
+{"n": 165, "q": "Təbii xarakterli fövqəladə hadisələrə hansılar aiddir?", "o": ["Geofiziki, geoloji, meteoroloji və aqrometeoroloji, hidroloji, dəniz hidroloji təhlükəli fövqəladə hallar, epidemiya, epizootiya, epifitotiya", "Binaların qəflətən uçması, terrorizm", "Qohumluq əlaqələrinin pozulması, dini zəmində münaqişə, bioloji hadisə", "Kölgə iqtisadiyyatı, yerin vəziyyətinin dəyişməsi", "Atmosferin dəyişməsi, narkotik ticarəti, sosial partlayış"], "a": 0},
+{"n": 166, "q": "Texnogen xarakterli fövqəladə hallara hansılar aiddir?", "o": ["Yeraltı suların səviyyəsinin qalxması, epizootiya", "Sel, sürüşmə, marşal", "Binaların qəflətən uçması, ərazinin radioaktiv çirklənməsi, AES qəzaları və s.", "Qar uçqunu, karst süxurlarında yer səthinin çökməsi", "Yerin yuxarı qatının çökməsi, sunami"], "a": 2},
+{"n": 167, "q": "Yeraltı (qrunt) sularının səviyyəsinin artması fövqəladə vəziyyətin hansı növüdür?", "o": ["Geofiziki təhlükəli fövqəladə hallar", "Geoloji təhlükəli fövqəladə hallar", "Hidroloji təhlükəli fövqəladə hallar", "Aqrometeoroloji təhlükələr", "Meteoroloji təhlükəli fövqəladə hallar"], "a": 2},
+{"n": 168, "q": "Sosial-siyasi xarakterli fövqəladə hadisələrə hansılar aiddir?", "o": ["Sosial yardımların gecikdirilməsi və ya verilməməsi", "Əhalinin banklarda qalan əmanətinin verilməməsi", "İqtisadi qanunların düzgün tətbiq edilməməsi", "İqtisadi böhranların sosial həyata təsirinin kəskinləşməsi", "Sosial-mədəni və siyasi xarakterli hadisələr"], "a": 4},
+{"n": 169, "q": "Vulkanların formaları hansılardır?", "o": ["Sönmüş vulkan, sönməmiş vulkan, aktiv vulkan", "Turbulentli və strukturlu", "Ümumiyyətlə yoxdur", "Qalxanvari vulkan, günbəzli vulkan, qatlı vulkan, mürəkkəb vulkan", "Novlu, atlanan"], "a": 3},
+{"n": 170, "q": "Atmosferin, yerin tərkibinin dəyişməsi və suyun, bitki örtüyünün məhv olması ilə əlaqədar baş verən hadisələr hansı növ fövqəladə hadisələrə aiddir?", "o": ["Texnogen xarakterli FH", "Təbii xarakterli FH", "Ekoloji xarakterli FH", "Hərbi xarakterli FH", "Sosial xarakterli FH"], "a": 2},
+{"n": 171, "q": "Subasma əsasən nə ilə nəticələnir?", "o": ["Yerli yanğınların əmələ gəlməsi ilə", "Hava şəraitinin dəyişməsi ilə", "Kənd təsərrüfatının fəaliyyətinin pozulması və məhsulun məhvi ilə", "Xalq təsərrüfatı obyektlərinin dayanıqlığı ilə", "Dağın zirvəsində əhalinin həyat fəaliyyətinin pozulması ilə"], "a": 2},
+{"n": 172, "q": "Müstəqillik dövründə Ümummilli Lider Heydər Əliyev “Mülki müdafiə haqqında” Azərbaycan Respublikasının Qanununu nə vaxt imzalamışdır?", "o": ["30 dekabr 1997-ci ildə", "30 dekabr 1991-ci ildə", "30 noyabr 1997-ci ildə", "30 oktyabr 1997-ci ildə", "30 dekabr 1998-ci ildə"], "a": 0},
+{"n": 173, "q": "Dəniz səviyyəsinin güclü ləngəri hansı fövqəladə hadisələrə aiddir?", "o": ["Geofiziki təhlükəli təzahürlərə", "Hidroloji təhlükəli təzahürlərə", "Dəniz hidroloji təhlükəli təzahürlərə", "Meteoroloji və aqrometeoroloji təhlükəli təzahürlərə", "Geoloji təhlükəli təzahürlərə"], "a": 2},
+{"n": 174, "q": "İldırım nədir?", "o": ["Havanın yüksək hərarətinin və rütubətinin aşağı səviyyəsidir", "İsti iqlim qurşağında ani təzyiq fərqlərindən qaynaqlanan şiddətli küləklərdir", "Bulud topalarından elektrostatik yüklərin boşalmasıdır", "Qısamüddətli atmosfer yağıntısıdır", "Quru üzərində atmosferin kəskin dəyişməsi nəticəsində baş verən hadisədir"], "a": 2},
+{"n": 175, "q": "Azərbaycan Respublikası neçənci ildən BMMT-nin üzvüdür?", "o": ["3 dekabr 1993-cü il tarixindən", "3 oktyabr 1993-cü il tarixindən", "3 noyabr 1995-ci il tarixindən", "3 noyabr 1993-cü il tarixindən", "3 noyabr 1998-ci il tarixindən"], "a": 3},
+{"n": 176, "q": "1 mart 1972-ci ildə BMMT-nin nizamnaməsi neçə dövlət tərəfindən təsdiq olunmuşdur?", "o": ["18 dövlət", "20 dövlət", "61 dövlət", "28 dövlət", "16 dövlət"], "a": 0},
+{"n": 177, "q": "Beynəlxalq Mülki Müdafiə Təşkilatı hansı dövlətin paytaxtında yerləşir?", "o": ["Almaniyanın paytaxtı Berlində", "İsveçrənin paytaxtı Cenevrədə", "Fransanın paytaxtı Parisdə", "Polşanın paytaxtı Varşavada", "Amerikanın paytaxtı Vaşinqtonda"], "a": 1},
+{"n": 178, "q": "Fövqəladə Hallar Nazirliyi neçənci ildə yaradılıb?", "o": ["2005-ci il dekabrın 16-da", "2006-cı il dekabrın 26-da", "2005-ci il noyabrın 16-da", "2008-ci il dekabrın 16-da", "2007-ci il oktyabrın 16-da"], "a": 0},
+{"n": 179, "q": "Fövqəladə Hallar Nazirliyinin tərkibinə neçə xidmət daxildir?", "o": ["12 xidmət", "16 xidmət", "14 xidmət", "18 xidmət", "10 xidmət"], "a": 2},
+{"n": 180, "q": "“Mülki müdafiənin təmin edilməsi haqqında” Azərbaycan Respublikası Nazirlər Kabinetinin 25 sentyabr 1998-ci il tarixli qərarının hansı maddəsində Azərbaycan Respublikası vətəndaşlarının mülki müdafiə sahəsində hüquqları göstərilmişdir?", "o": ["Maddə 3", "Maddə 7", "Maddə 8", "Maddə 6", "Maddə 9"], "a": 4},
+{"n": 181, "q": "“Mülki müdafiənin təmin edilməsi haqqında” Azərbaycan Respublikası Nazirlər Kabinetinin 25 sentyabr 1998-ci il tarixli qərarının hansı maddəsində fövqəladə hallardan müdafiə sahəsində əhalinin hazırlanması göstərilmişdir?", "o": ["Maddə 6", "Maddə 10", "Maddə 7", "Maddə 8", "Maddə 9"], "a": 1},
+{"n": 182, "q": "Fövqəladə hadisələrdən zərər çəkmiş əhalinin sosial müdafiəsi üçün lazımi tədbirlər həyata keçirmək kimin səlahiyyətinə daxildir?", "o": ["Daxili İşlər Nazirliyinin", "Dövlət Təhlükəsizliyi Xidmətinin", "Dövlətin", "Müdafiə Nazirliyinin", "Maliyyə Nazirliyinin"], "a": 2},
+{"n": 183, "q": "Əhaliyə mülki müdafiə tədbirlərinin öyrədilməsini təşkil etmək, əhalini fərdi və kollektiv mühafizə vasitələri ilə təmin etmək kimlərə həvalə olunur?", "o": ["Dövlət hakimiyyət orqanlarına", "İdarə və təşkilatlara", "Rayonun icra hakimiyyətinə", "Polis rəisinə", "Obyekt rəhbərlərinə"], "a": 0},
+{"n": 184, "q": "“Mülki müdafiənin təmin edilməsi” hansı qərara əsasən müəyyən edilir?", "o": ["Azərbaycan Respublikası Nazirlər Kabinetinin 25 sentyabr 1998-ci il tarixli 239 nömrəli qərarı", "Azərbaycan Respublikası Nazirlər Kabinetinin 25 sentyabr 1998-ci il tarixli 139 nömrəli qərarı", "Azərbaycan Respublikası Nazirlər Kabinetinin 25 sentyabr 1998-ci il tarixli 293 nömrəli qərarı", "Azərbaycan Respublikası Nazirlər Kabinetinin 25 sentyabr 1998-ci il tarixli 193 nömrəli qərarı", "Azərbaycan Respublikası Nazirlər Kabinetinin 25 sentyabr 1998-ci il tarixli 393 nömrəli qərarı"], "a": 3},
+{"n": 185, "q": "Mülki müdafiənin məqsədi nədən ibarətdir?", "o": ["Şirkətlərin rəhbərləri ilə əlaqə saxlamaq", "Profilaktik tədbirlər həyata keçirmək, ziyan və itkilərin həcmini maksimum azaltmaq, hadisələri və onların nəticələrini aradan qaldırmaq", "Qüvvə və vasitələri toplamaq", "Əhali ilə məşqlər keçmək", "Obyektlərdə fəhlə və qulluqçularla təlim keçmək"], "a": 1},
+{"n": 186, "q": "Ərazi prinsipi nə deməkdir?", "o": ["MM tədbirlərinin obyektlərdə təşkil edilməsi", "MM tədbirlərinin kənd yerlərində təşkil edilməsi", "MM tədbirlərinin ayrı-ayrı bölgələrdə təşkil edilməsi", "MM tədbirlərinin respublikanın bütün ərazisində təşkil edilməsi", "MM tədbirlərinin şəhərlərdə təşkil edilməsi"], "a": 3},
+{"n": 187, "q": "Mülki müdafiənin neçə təşkili prinsipi vardır?", "o": ["2 prinsip", "5 prinsip", "6 prinsip", "4 prinsip", "3 prinsip"], "a": 2},
+{"n": 188, "q": "Beynəlxalq Mülki Müdafiə Günü hansı tarixdə qeyd olunur?", "o": ["1 may", "1 mart", "1 aprel", "1 iyul", "1 iyun"], "a": 1},
+{"n": 189, "q": "Fərqli və kompleks yanaşma prinsipi nə deməkdir?", "o": ["Baş verə biləcək və ya baş vermiş fövqəladə hadisələr haqqında Azərbaycan Respublikasının əhalisinə dərhal məlumat verilməsi", "Mülki müdafiə tədbirlərinin Azərbaycan Respublikasının bütün əhalisini əhatə etməsi və məcburi xarakter daşıması", "Azərbaycan Respublikasının mülki müdafiə sisteminin fövqəladə hadisələr zamanı dərhal və səmərəli fəaliyyətə başlamağa hazır vəziyyətdə olması", "Mülki müdafiənin təmin edilməsində iştirak edən Azərbaycan Respublikasının dövlət orqanlarının və mülki müdafiə qüvvələrinin sıx və uzlaşdırılmış fəaliyyət göstərməsi", "Mülki müdafiə tədbirlərinin obyektlərin, şəhər və bölgələrin hərbi-strateji, iqtisadi və digər xüsusiyyətləri nəzərə alınmaqla əlaqələndirilmiş şəkildə həyata keçirilməsi"], "a": 4},
+{"n": 190, "q": "Daimi hazırlıq prinsipi nə deməkdir?", "o": ["Dəniz hərbi qüvvələrinin fövqəladə hadisələr zamanı dərhal və səmərəli fəaliyyətə başlamağa hazır vəziyyətdə olmaması", "Mülki müdafiə sisteminin fövqəladə hadisələr zamanı dərhal və səmərəli fəaliyyətə başlamağa hazır vəziyyətdə olması", "Əhalinin fövqəladə hadisələr zamanı fəaliyyətə başlamağa hazır vəziyyətdə olması", "Sərhəd xidmətlərinin fövqəladə hadisələr zamanı sərhəd keçid məntəqələrində fəaliyyəti genişləndirməsi", "Daxili qoşunların fövqəladə hadisələr zamanı iğtişaşların qarşısını alması"], "a": 1},
+{"n": 191, "q": "Dərhal xəbərdarlıq prinsipi nə deməkdir?", "o": ["Azərbaycan Respublikasının mülki müdafiə sisteminin fövqəladə hadisələr zamanı dərhal və səmərəli fəaliyyətə başlamağa hazır vəziyyətdə olması", "Baş verə biləcək və ya baş vermiş fövqəladə hadisələr haqqında Azərbaycan Respublikasının əhalisinə dərhal məlumat verilməsi", "Mülki müdafiə tədbirlərinin Azərbaycan Respublikasının bütün əhalisini əhatə etməsi və məcburi xarakter daşıması", "Mülki müdafiə tədbirlərinin Azərbaycan Respublikasının bütün ərazisində təşkil edilməsi", "Obyektlərdə fəhlə və qulluqçularla təlimlərin keçirilməsi"], "a": 1},
+{"n": 192, "q": "Qarşılıqlı əlaqə prinsipi nə deməkdir?", "o": ["Mülki müdafiənin təmin edilməsində iştirak edən Azərbaycan Respublikasının dövlət orqanlarının və mülki müdafiə qüvvələrinin sıx və uzlaşdırılmış fəaliyyət göstərməsi", "Obyekt rəhbərləri ilə mülki müdafiə dəstələrinin sıx fəaliyyət göstərməsi", "İcra rəhbərləri ilə mülki müdafiə qüvvələrinin uzlaşdırılmış fəaliyyət göstərməsi", "Şirkətlərlə mülki müdafiə qüvvələrinin sıx fəaliyyət göstərməməsi", "Mülki müdafiənin təmin edilməsində iştirak edən Azərbaycan Respublikasının əhalisi ilə mülki müdafiə qüvvələrinin sıx və uzlaşdırılmış fəaliyyət göstərməsi"], "a": 0},
+{"n": 193, "q": "Mülki müdafiə sahəsində dövlətin vəzifələri nədən ibarətdir?", "o": ["İdarə və təşkilatların vəziyyətlərini müəyyən etmək", "Mülki müdafiə sisteminə rəhbərlik etmək, strukturunu, tərkibini, qarşılıqlı əlaqəni, maliyyə və maddi-texniki təminat qaydasını müəyyən etmək", "Xilasediciləri cəlb etmək", "Daxili qoşunlara göstəriş vermək", "Fəhlə və qulluqçulara maliyyə yardımı etmək"], "a": 1},
+{"n": 194, "q": "Kütləvilik və məcburilik prinsipi nə deməkdir?", "o": ["Mülki müdafiə tədbirlərinin şəhərlərin və bölgələrin əhalisini əhatə etmədən və məcburi xarakter daşıması", "Mülki müdafiə tədbirlərinin Azərbaycan Respublikasının bütün əhalisini əhatə etməsi və məcburi xarakter daşıması", "Mülki müdafiə tədbirlərinin keçirilməsinə ehtiyac yoxdur", "Mülki müdafiə tədbirlərinin bölgələrin əhalisini əhatə etməsi və məcburi xarakter daşımaması", "Mülki müdafiə tədbirlərinin obyektlərdə fəhlə və qulluqçuların təlimlərə cəlb edilməsi və məcburi xarakter daşıması"], "a": 1},
+{"n": 195, "q": "Hansı bənddə mülki müdafiənin prinsipləri düzgün qaydada verilmişdir?", "o": ["Qarşılıqlı əlaqə prinsipi, könüllülük prinsipi", "Ərazi, fərqli və kompleks yanaşma, kütləvilik və məcburilik, dərhal xəbərdarlıq, daimi hazırlıq, qarşılıqlı əlaqə prinsipi", "Əhali prinsipi, prinsipiallıq, əlaqə prinsipi", "Fərdi yanaşma, dərhal xəbərdarlıq, əhali prinsipi", "Ərazi, fərdilik prinsipi, qarşılıqlıq prinsipi"], "a": 1},
+{"n": 196, "q": "Tibb xidməti generalı, fransız Corc Sant-Pol Parisdə “Cenevrə Regionu Assosiasiyası” təşkilatını neçənci ildə yaradır?", "o": ["1932-ci ilin mayında", "1931-ci ilin mayında", "1991-ci ilin mayında", "1921-ci ilin mayında", "1933-cü ilin mayında"], "a": 1},
+{"n": 197, "q": "Ali məktəblərin əyani və qiyabi şöbələrinin bütün tələbələrinə öyrədilməsi məcburi olan və tədris planlarına xüsusi fənn kimi daxil edilən fənn hansıdır?", "o": ["Biologiya fənni", "Politologiya fənni", "Sosiologiya fənni", "Mülki müdafiə fənni", "Psixologiya fənni"], "a": 3},
+{"n": 198, "q": "Mülki müdafiə fənnindən nəyi öyrənirik?", "o": ["Baş verən hadisənin izlənməsini", "Çürümə mərhələsini", "Bəzi fövqəladə hallarda üçüncü mərhələnin tamamlanmasını", "Obyektlərə və ətraf mühitə müsbət təsir göstərən amilləri", "Dinc və müharibə dövründə əhalinin və ərazinin təhlükəsizliyinin təmin edilməsini"], "a": 4},
+{"n": 199, "q": "Azərbaycan Respublikasının Prezidenti “Mülki müdafiə haqqında” Azərbaycan Respublikası Qanununun tətbiq edilməsi barədə 700 saylı fərmanı nə vaxt imzalamışdır?", "o": ["1989-cu il aprelin 18-də", "1988-ci il aprelin 18-də", "1998-ci il aprelin 18-də", "1999-cu il aprelin 18-də", "1997-ci il aprelin 18-də"], "a": 2},
+{"n": 200, "q": "Azərbaycan Respublikasının Prezidenti “Azərbaycan Respublikasının Mülki Müdafiəsi haqqında Əsasnamənin təsdiq edilməsi barədə” 73 saylı fərmanı nə vaxt imzalamışdır?", "o": ["1991-ci il iyulun 31-də", "1993-cü il iyulun 31-də", "1994-cü il iyulun 31-də", "1992-ci il iyulun 31-də", "1995-ci il iyulun 31-də"], "a": 3}
+]
+;
+// Pure functions shared by the page and the local test.
+function itemsToLines(pages){
+  const lines=[];
+  for(const items of pages){
+    const its=items.filter(i=>i.str&&i.str.trim()!=='').slice().sort((a,b)=>(b.y-a.y)||(a.x-b.x));
+    const rows=[];
+    for(const it of its){
+      const r=rows.find(r=>Math.abs(r.y-it.y)<3);
+      if(r) r.items.push(it); else rows.push({y:it.y,items:[it]});
+    }
+    rows.sort((a,b)=>b.y-a.y);
+    for(const r of rows){
+      r.items.sort((a,b)=>a.x-b.x);
+      let s='',prevEnd=null;
+      for(const it of r.items){
+        if(prevEnd!==null && it.x-prevEnd>1.2 && !s.endsWith(' ')) s+=' ';
+        s+=it.str; prevEnd=it.x+(it.w||0);
+      }
+      s=s.replace(/\s+/g,' ').trim();
+      if(s) lines.push(s);
+    }
+  }
+  return lines;
+}
+function parseQuestionLines(lines){
+  const qs=[];let cur=null,inOpt=false;
+  const skip=l=>/^Mülki müdafiə(\s+\d+\s+test sualı)?$/i.test(l)||/^Suallar\s+\d+/i.test(l)||/^\d+\s*\/\s*\d+$/.test(l);
+  for(const l of lines){
+    if(skip(l)) continue;
+    const m=l.match(/^(\d{1,4})\.\s*(.*)$/);
+    if(m && (!cur || Number(m[1])===cur.n+1 || (inOpt && cur.o.length>=2))){
+      cur={n:Number(m[1]),q:m[2],o:[],a:-1};qs.push(cur);inOpt=false;continue;
+    }
+    if(!cur) continue;
+    const mo=l.match(/^([A-Fa-f])\)\s*([✓✔])?\s*(.*)$/);
+    if(mo){ if(mo[2]) cur.a=cur.o.length; cur.o.push(mo[3]); inOpt=true; continue; }
+    if(inOpt) cur.o[cur.o.length-1]+=' '+l; else cur.q+=' '+l;
+  }
+  const clean=s=>s.replace(/\s+/g,' ').trim();
+  const good=[],bad=[];
+  for(const q of qs){
+    q.q=clean(q.q);q.o=q.o.map(clean);
+    if(q.o.length>=2 && q.a>=0 && q.q) good.push(q); else bad.push(q.n);
+  }
+  return {questions:good,skipped:bad};
+}
+const BUILTIN_NAME='Aşurbəy · 200 sual';
+let DATA={key:'asurbey200',name:BUILTIN_NAME,questions:BUILTIN};
+const $=id=>document.getElementById(id);
+const LETTERS='ABCDEF';
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
+  del(k){try{localStorage.removeItem(k)}catch(e){}}
+};
+const opts={count:'30',order:'random'};
+let stats={};let S=null; // S = current session
+
+function byN(){const m=new Map();DATA.questions.forEach(q=>m.set(q.n,q));return m}
+let QMAP=byN();
+function statsKey(){return 'mm-stats:'+DATA.key}
+function sessKey(){return 'mm-session:'+DATA.key}
+function loadStats(){stats=store.get(statsKey(),{})}
+function saveStats(){store.set(statsKey(),stats)}
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(36)}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function show(v){['vStart','vTest','vResult'].forEach(id=>$(id).hidden=id!==v);window.scrollTo({top:0})}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ---------- start view ---------- */
+function renderStart(){
+  const total=DATA.questions.length;
+  let seen=0,att=0,cor=0,wrong=0;
+  for(const q of DATA.questions){const s=stats[q.n];if(s&&s.s){seen++;att+=s.s;cor+=s.c;if(s.w)wrong++}}
+  $('sSeen').textContent=seen;
+  $('sAcc').textContent=att?Math.round(cor/att*100)+'%':'—';
+  $('sWrong').textContent=wrong;
+  $('sNew').textContent=total-seen;
+  $('wrongBtn').textContent='Səhvlərimi işlə ('+wrong+')';$('wrongBtn').disabled=!wrong;
+  $('newBtn').textContent='Görmədiklərim ('+(total-seen)+')';$('newBtn').disabled=total===seen;
+  const ns=DATA.questions.map(q=>q.n);
+  $('from').min=$('to').min=Math.min(...ns);$('from').max=$('to').max=Math.max(...ns);
+  if(+$('to').value>Math.max(...ns)||+$('to').value<1) $('to').value=Math.max(...ns);
+  const saved=store.get(sessKey(),null);
+  if(saved&&saved.i<saved.ids.length&&saved.ids.every(n=>QMAP.has(n))){
+    $('resumeBox').hidden=false;
+    $('resumeNote').textContent=(saved.i)+' / '+saved.ids.length+' sual cavablanıb';
+  } else $('resumeBox').hidden=true;
+  $('src').textContent=DATA.name;
+  renderSourceSwitch();
+}
+function renderSourceSwitch(){
+  let b=$('backBuiltin');
+  if(DATA.key!=='asurbey200'){
+    if(!b){b=document.createElement('button');b.id='backBuiltin';b.type='button';b.className='btn ghost';b.textContent='Aşurbəy-ə qayıt';
+      b.onclick=()=>{store.del('mm-upload');setData({key:'asurbey200',name:BUILTIN_NAME,questions:BUILTIN});showMsg('Daxili 200 suala qayıtdın.','good')};
+      $('uploadBtn').after(b)}
+  } else if(b) b.remove();
+}
+function segInit(id,keyName){
+  $(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    opts[keyName]=b.dataset.v;[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'))});
+}
+segInit('segCount','count');segInit('segOrder','order');
+
+function pickRange(){
+  let a=+$('from').value||1,b=+$('to').value||1;if(a>b)[a,b]=[b,a];
+  return DATA.questions.filter(q=>q.n>=a&&q.n<=b).map(q=>q.n);
+}
+function begin(pool,forceAll){
+  if(!pool.length){showMsg('Seçilmiş aralıqda sual yoxdur.','err');return}
+  let ids=opts.order==='seq'?pool.slice().sort((a,b)=>a-b):shuffle(pool);
+  if(!forceAll&&opts.count!=='all') ids=ids.slice(0,+opts.count);
+  const perm={};const sh=$('shuffleOpts').checked;
+  ids.forEach(n=>{const k=QMAP.get(n).o.length;const base=[...Array(k).keys()];perm[n]=sh?shuffle(base):base});
+  S={ids,perm,i:0,ans:{}};store.set(sessKey(),S);
+  show('vTest');renderQ();
+}
+$('startBtn').onclick=()=>begin(pickRange());
+$('wrongBtn').onclick=()=>begin(DATA.questions.filter(q=>stats[q.n]&&stats[q.n].w).map(q=>q.n),true);
+$('newBtn').onclick=()=>begin(pickRange().filter(n=>!(stats[n]&&stats[n].s)));
+$('resumeBtn').onclick=()=>{S=store.get(sessKey(),null);if(!S)return;show('vTest');renderQ()};
+$('resetBtn').onclick=()=>{$('resetConfirm').hidden=false;$('resetBtn').hidden=true};
+$('resetNo').onclick=()=>{$('resetConfirm').hidden=true;$('resetBtn').hidden=false};
+$('resetYes').onclick=()=>{stats={};saveStats();store.del(sessKey());$('resetConfirm').hidden=true;$('resetBtn').hidden=false;renderStart();showMsg('Nəticələr sıfırlandı.','good')};
+
+/* ---------- test view ---------- */
+function renderBar(){
+  const bar=$('bar');bar.innerHTML='';const w=100/S.ids.length;
+  S.ids.forEach(n=>{const i=document.createElement('i');i.style.width=w+'%';
+    if(n in S.ans) i.style.background=S.ans[n]===QMAP.get(n).a?'var(--ok)':'var(--bad)';bar.appendChild(i)});
+  let ok=0,bad=0;for(const n in S.ans){S.ans[n]===QMAP.get(+n).a?ok++:bad++}
+  $('tOk').textContent='✓ '+ok;$('tBad').textContent='✗ '+bad;
+}
+function renderQ(){
+  const n=S.ids[S.i],q=QMAP.get(n),perm=S.perm[n];
+  $('counter').textContent=(S.i+1)+' / '+S.ids.length;
+  $('qnum').textContent='Sual №'+n;
+  $('qtext').textContent=q.q;
+  const ol=$('opts');ol.innerHTML='';
+  perm.forEach((orig,pos)=>{
+    const li=document.createElement('li');const b=document.createElement('button');
+    b.type='button';b.className='opt';b.dataset.orig=orig;
+    b.innerHTML='<span class="key">'+LETTERS[pos]+'</span><span class="t">'+esc(q.o[orig])+'</span>';
+    b.onclick=()=>choose(orig);li.appendChild(b);ol.appendChild(li)});
+  $('verdict').className='verdict';$('verdict').textContent='';
+  $('nextBtn').disabled=true;$('nextBtn').textContent=S.i===S.ids.length-1?'Nəticəni gör →':'Növbəti sual →';
+  renderBar();
+  if(n in S.ans) paint(S.ans[n]);
+}
+function paint(chosen){
+  const n=S.ids[S.i],q=QMAP.get(n);
+  [...$('opts').querySelectorAll('.opt')].forEach(b=>{
+    const o=+b.dataset.orig;b.disabled=true;
+    if(o===q.a) b.classList.add('ok'); else if(o===chosen) b.classList.add('bad'); else b.classList.add('dim')});
+  const v=$('verdict');
+  if(chosen===q.a){v.className='verdict ok';v.textContent='✓ Düzgündür'}
+  else{const pos=S.perm[n].indexOf(q.a);v.className='verdict bad';v.textContent='✗ Səhv. Düzgün cavab: '+LETTERS[pos]}
+  $('nextBtn').disabled=false;
+}
+function choose(orig){
+  const n=S.ids[S.i];if(n in S.ans) return;
+  const q=QMAP.get(n);S.ans[n]=orig;
+  const s=stats[n]||{s:0,c:0,w:false};s.s++;if(orig===q.a){s.c++;s.w=false}else s.w=true;stats[n]=s;saveStats();
+  store.set(sessKey(),Object.assign({},S,{i:S.i+1}));
+  paint(orig);renderBar();$('nextBtn').focus({preventScroll:true});
+}
+function next(){
+  if(!(S.ids[S.i] in S.ans)) return;
+  if(S.i<S.ids.length-1){S.i++;store.set(sessKey(),S);renderQ();window.scrollTo({top:0})}
+  else finish();
+}
+$('nextBtn').onclick=next;
+$('finishBtn').onclick=()=>finish();
+document.addEventListener('keydown',e=>{
+  if($('vTest').hidden||e.metaKey||e.ctrlKey||e.altKey) return;
+  if(e.target&&e.target.tagName==='INPUT') return;
+  const k=e.key.toUpperCase();let pos=LETTERS.indexOf(k);
+  if(pos<0&&/^[1-6]$/.test(k)) pos=+k-1;
+  const n=S.ids[S.i];
+  if(pos>=0&&pos<S.perm[n].length&&!(n in S.ans)){e.preventDefault();choose(S.perm[n][pos]);return}
+  if(e.key==='Enter'&&(n in S.ans)){e.preventDefault();next()}
+});
+
+/* ---------- result view ---------- */
+let lastWrong=[];
+function finish(){
+  const done=S.ids.filter(n=>n in S.ans);
+  const ok=done.filter(n=>S.ans[n]===QMAP.get(n).a);
+  lastWrong=done.filter(n=>S.ans[n]!==QMAP.get(n).a);
+  const pct=done.length?Math.round(ok.length/done.length*100):0;
+  $('rPct').textContent=pct+'%';
+  $('rLine').textContent=ok.length+' düzgün, '+lastWrong.length+' səhv · '+done.length+' / '+S.ids.length+' sual cavablandı';
+  $('retryWrongBtn').disabled=!lastWrong.length;
+  const rv=$('review');rv.innerHTML='';
+  $('reviewPanel').hidden=!lastWrong.length;
+  lastWrong.forEach(n=>{const q=QMAP.get(n);const d=document.createElement('div');d.className='rv';
+    d.innerHTML='<div class="qnum">Sual №'+n+'</div><div class="q">'+esc(q.q)+'</div>'+
+      '<div class="a bad">✗ Sənin cavabın: '+esc(q.o[S.ans[n]])+'</div><div class="a ok">✓ Düzgün cavab: '+esc(q.o[q.a])+'</div>';rv.appendChild(d)});
+  store.del(sessKey());S=null;show('vResult');
+}
+$('retryWrongBtn').onclick=()=>{const sv=opts.order;begin(lastWrong.slice(),true);opts.order=sv};
+$('homeBtn').onclick=()=>{renderStart();show('vStart')};
+
+/* ---------- PDF upload ---------- */
+function showMsg(t,kind){const m=$('uploadMsg');m.textContent=t;m.className='msg'+(kind?' '+kind:'');m.hidden=false}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s)})}
+async function ensurePdfJs(){
+  if(window.pdfjsLib&&window.pdfjsWorker) return;
+  const base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  await loadScript(base+'pdf.worker.min.js');
+  await loadScript(base+'pdf.min.js');
+}
+$('uploadBtn').onclick=()=>$('file').click();
+$('file').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f) return;
+  show('vStart');showMsg('“'+f.name+'” oxunur…');
+  try{
+    await ensurePdfJs();
+    const buf=await f.arrayBuffer();
+    const doc=await pdfjsLib.getDocument({data:buf}).promise;
+    const pages=[];
+    for(let p=1;p<=doc.numPages;p++){
+      const tc=await (await doc.getPage(p)).getTextContent();
+      pages.push(tc.items.map(it=>({str:it.str,x:it.transform[4],y:it.transform[5],w:it.width})));
+    }
+    const r=parseQuestionLines(itemsToLines(pages));
+    if(r.questions.length<1){showMsg('Bu PDF-də sual tapılmadı. PDF bu formatda olmalıdır: “1. Sual…”, sonra “A) … E)” variantları, doğru variantın yanında ✓ işarəsi.','err');return}
+    const key='pdf-'+hashStr(JSON.stringify(r.questions));
+    const data={key,name:f.name.replace(/\.pdf$/i,'')+' · '+r.questions.length+' sual',questions:r.questions};
+    store.set('mm-upload',data);setData(data);
+    showMsg(r.questions.length+' sual yükləndi.'+(r.skipped.length?' Oxuna bilməyən '+r.skipped.length+' sual buraxıldı (№ '+r.skipped.slice(0,10).join(', ')+(r.skipped.length>10?'…':'')+').':''),'good');
+  }catch(err){showMsg('PDF oxunmadı. İnternet bağlantısını yoxla və yenidən cəhd et.','err')}
+});
+function setData(d){DATA=d;QMAP=byN();loadStats();$('from').value=Math.min(...d.questions.map(q=>q.n));$('to').value=Math.max(...d.questions.map(q=>q.n));renderStart();show('vStart')}
+
+/* ---------- boot ---------- */
+(function(){const up=store.get('mm-upload',null);
+  if(up&&up.questions&&up.questions.length){DATA=up;QMAP=byN()}
+  loadStats();$('from').value=Math.min(...DATA.questions.map(q=>q.n));$('to').value=Math.max(...DATA.questions.map(q=>q.n));renderStart()})();
+</script>
+
+</body>
+</html>
